@@ -1,6 +1,6 @@
 # Trợ lý hỏi–đáp RAG trên văn bản pháp quy chuỗi cung ứng FMCG
 
-> **Trạng thái:** đang thực hiện — đã xong khâu thu thập dữ liệu & chunking; tiếp theo là embedding, vector store, retrieval và sinh câu trả lời có trích dẫn.
+> **Trạng thái:** đang thực hiện — đã xong thu thập dữ liệu, chunking, embedding & truy hồi ngữ nghĩa; tiếp theo là sinh câu trả lời có trích dẫn và đánh giá.
 
 ## Mục tiêu
 Xây dựng trợ lý hỏi–đáp (RAG) trả lời câu hỏi về **quy định pháp luật áp dụng cho vận hành chuỗi cung ứng ngành hàng tiêu dùng nhanh (FMCG)**, câu trả lời **bắt buộc kèm trích dẫn nguồn** đến từng Điều/Khoản của văn bản gốc.
@@ -56,14 +56,21 @@ Bài toán thực tế: nhân viên vận hành / QA / xuất nhập khẩu cầ
 
 Với mỗi chunk vượt ngưỡng, phần bị cắt được **giải mã ra để đọc và đánh giá mức thiệt hại** trước khi quyết định cắt tiếp hay chấp nhận — vì nội dung cuối điều khoản thường là điều kiện phủ định phần đầu.
 
+### 5. Vector hóa & truy hồi ngữ nghĩa
+- Mã hóa 291 chunk bằng `intfloat/multilingual-e5-base` (chọn theo benchmark VN-MTEB; đa ngữ, context 512 token, chạy local trên GPU RTX 4050), chuẩn hóa L2 để cosine similarity = tích vô hướng.
+- Truy hồi brute-force (`emb @ q`) — chính xác tuyệt đối, đủ nhanh ở quy mô vài trăm vector; ghi rõ khi nào cần chuyển sang FAISS/ANN.
+- **Đánh giá định tính** trên bộ 5 câu hỏi (4 trong phạm vi + 1 ngoài phạm vi): 3/4 câu trong phạm vi có chunk đúng ở top-1, câu còn lại ở top-1 & top-3.
+
+**Phát hiện quan trọng:** câu hỏi ngoài phạm vi vẫn đạt cosine 0.80–0.81 (chỉ thấp hơn chút so với 0.84–0.90 của câu trong phạm vi) ⇒ **không thể dùng ngưỡng điểm cố định** để phát hiện "không có trong tài liệu"; việc này phải giao cho LLM ở khâu sinh câu trả lời.
+
 ## Kết quả hiện tại
-- `data/chunks.json` — **291 chunk**, mỗi chunk gồm nội dung + 14 trường metadata (điều, chương, số hiệu văn bản, ngày ký, nguồn, cờ sửa đổi, `parent_id`…), sẵn sàng cho khâu embedding.
+- `data/chunks.json` — 291 chunk + metadata phục vụ trích dẫn.
+- `data/embeddings.npy` — ma trận embedding (291 × 768), đã chuẩn hóa L2.
 
 ## Đang làm tiếp
-- [ ] Embedding toàn bộ chunk + vector store
-- [ ] Retrieval (top-k) và thử nghiệm bộ câu hỏi
-- [ ] Sinh câu trả lời có trích dẫn nguồn bằng LLM
-- [ ] Đánh giá chất lượng retrieval và tính bám nguồn (groundedness)
+- [ ] Sinh câu trả lời có trích dẫn nguồn bằng LLM (Gemini API), tự nói "không tìm thấy" khi context không chứa câu trả lời
+- [ ] Đánh giá chất lượng retrieval (Recall@k) và tính bám nguồn (groundedness)
+- [ ] So sánh 2–3 mô hình embedding trên bộ câu hỏi thật
 
 ## Hạn chế đã biết
 - **Phụ lục dạng bảng chưa được xử lý** — trong đó có Phụ lục I của NĐ 43 (danh mục nội dung bắt buộc ghi nhãn theo nhóm hàng hóa). Hướng xử lý: chuyển mỗi dòng bảng thành câu văn xuôi trước khi chunk.
@@ -74,8 +81,9 @@ Với mỗi chunk vượt ngưỡng, phần bị cắt được **giải mã ra 
 
 ## File
 - `rag_fmcg_chunking.ipynb` — thu thập, khảo sát, trích xuất và chunking dữ liệu
+- `rag_fmcg_embedding.ipynb` — vector hóa & truy hồi ngữ nghĩa
 - `Tong_hop_kien_thuc_4.md` — tổng hợp kiến thức RAG & xử lý dữ liệu
-- `data/` — văn bản gốc (`.docx`, `raw_html/`) và `chunks.json`
+- `data/` — văn bản gốc (`.docx`, `raw_html/`), `chunks.json`, `embeddings.npy`
 
 ## Công nghệ
 Python, BeautifulSoup, python-docx, PyMuPDF, regex, pandas, sentence-transformers (multilingual-e5), HuggingFace tokenizers.

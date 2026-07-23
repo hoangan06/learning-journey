@@ -134,6 +134,26 @@ Chuẩn hóa vector về độ dài 1 → cosine similarity rút gọn thành t�
 
 ---
 
+## IV-bis. Truy hồi (Retrieval) & Vector store
+
+### 1. Brute-force vs ANN
+- **Brute-force** (`emb @ q` bằng numpy): so với *mọi* vector, **chính xác tuyệt đối**, chi phí tuyến tính theo số vector. Đủ nhanh ở quy mô vài trăm–vài chục nghìn vector.
+- **FAISS / ANN (approximate nearest neighbor)**: index IVF/HNSW chia không gian thành ô/đồ thị, chỉ so với một phần nhỏ vector → nhanh gấp nhiều lần, đổi lại **có thể bỏ sót** (recall < 100%).
+- **Khi nào đổi sang FAISS:** khi kho lớn tới mức độ trễ tuyến tính không chấp nhận được (hàng trăm nghìn → hàng triệu vector). Khi đó phải **đo recall** để biết đánh đổi bao nhiêu độ chính xác lấy tốc độ.
+- Vector đã chuẩn hóa L2 → dùng `IndexFlatIP` (inner product) trong FAISS là tương đương cosine.
+
+### 2. Điểm số cosine **không** phân tách được "trong / ngoài phạm vi"
+Thực nghiệm: câu hỏi ngoài phạm vi tài liệu vẫn đạt điểm 0.80–0.81, chỉ thấp hơn chút so với 0.84–0.90 của câu trong phạm vi. Vùng chồng lấn quá hẹp → **không thể đặt một ngưỡng cosine cố định** để phát hiện "không có trong tài liệu" (ngưỡng vừa lọt rác vừa chặn nhầm câu thật).
+→ Việc "nhận ra mình không biết" phải giao cho **LLM ở khâu generation** (đọc context được cấp rồi tự nói "không tìm thấy quy định"), không dựa vào ngưỡng điểm.
+
+### 3. Dấu vết pha loãng ngữ nghĩa vẫn còn sau chunking
+Chunk gộp nhiều khoản định nghĩa (greedy grouping gom 7 khoản "Giải thích từ ngữ") → điểm tương đồng là *trung bình* của nhiều định nghĩa, làm loãng tín hiệu của định nghĩa cần tìm. Cắt nhỏ để né truncate và gom lại cho vector đủ dày là **hai lực kéo ngược nhau**; nhóm "giải thích từ ngữ" nên cân nhắc *không* gom.
+
+### 4. Bằng chứng cần parent-child
+Hai part cắt ra từ cùng một Điều bị **xé điểm**: part chứa ngữ cảnh mở đầu xếp top-3, part chứa nội dung chính top-1. Nở cả hai về Điều cha (`parent_id`) khi đưa cho LLM sẽ khắc phục.
+
+---
+
 ## V. Xử lý dữ liệu thực tế
 
 ### 1. Nhận dạng định dạng file
