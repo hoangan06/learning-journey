@@ -154,6 +154,87 @@ Hai part cắt ra từ cùng một Điều bị **xé điểm**: part chứa ng�
 
 ---
 
+## IV-ter. Vector database & FAISS
+
+### 1. Vector database là gì, khác SQL chỗ nào
+- SQL DB trả lời **khớp chính xác/khoảng** (`id = 27`, `giá < 100k`). Không làm được "tìm đoạn *gần nghĩa*".
+- Vector DB sinh ra cho đúng một việc: lưu hàng loạt vector và trả lời **k-NN** — "cho q, tìm k vector gần nhất theo cosine/L2/inner product".
+- `emb @ q` + `argsort` bằng numpy **chính là một vector DB tối giản**. Vector DB thật = phép tìm đó + 4 thứ: (1) index thông minh (khỏi quét hết); (2) persistence (lưu đĩa, khỏi encode lại); (3) metadata + filter ("gần nghĩa **và** thuộc văn bản 15/2018"); (4) CRUD + đồng thời ở quy mô lớn.
+
+### 2. Bài toán k-NN đắt ở đâu
+Brute-force: N vector × d chiều → **O(N·d)** mỗi truy vấn. N=291 thì tức thì; N=100 triệu × 768 chiều thì mỗi query quét ~76 tỷ phép tính → không dùng thời gian thực được.
+→ **ANN (Approximate Nearest Neighbor):** chấp nhận bỏ sót láng giềng đúng để đổi tốc độ gấp trăm–nghìn lần. Chữ *Approximate* là mấu chốt: **đánh đổi recall lấy tốc độ.**
+
+### 3. FAISS — thư viện & các loại index
+FAISS = thư viện similarity search (C++ + binding Python, chạy cả GPU). Không phải database server. Cung cấp nhiều **index**:
+
+| Index | Cơ chế | Đặc điểm |
+|---|---|---|
+| `IndexFlatIP` / `IndexFlatL2` | Brute-force, quét hết | Chính xác 100%; `IP` cho vector đã chuẩn hóa L2 = cosine. Dùng khi N nhỏ |
+| `IndexIVFFlat` | Chia `nlist` cụm (k-means), query chỉ xét `nprobe` cụm gần nhất | Nút `nprobe` = đánh đổi recall↔tốc độ |
+| `IndexHNSW` | Đồ thị "thế giới nhỏ" nhiều tầng | Rất nhanh, recall cao, tốn RAM, xây index chậm |
+
+### 4. Hai nút vặn của IVF
+- **`nprobe`** (lúc *truy vấn*): số cụm được xét. Nhỏ → nhanh, recall thấp; lớn → chậm, recall cao. `nprobe = nlist` ⇒ quay về brute-force.
+- **`nlist`** (lúc *xây index*): số cụm. Lớn hơn → cụm mịn hơn, recall/tốc độ tốt hơn nhưng phân cụm tốn hơn, cần đủ dữ liệu. Quy tắc thô: `nlist ≈ √N`.
+- **Hiện tượng biên cụm:** query nằm sát ranh giới giữa hai cụm → láng giềng đúng có thể ở cụm không được xét ⇒ recall IVF không bao giờ đạt 100% (trừ khi xét mọi cụm). **ANN sai nhiều nhất ở query nằm giữa các cụm.**
+
+### 5. Đo recall — đừng đoán
+Không đánh giá "câu trả lời tệ đi" bằng cảm giác. Giữ `IndexFlat` làm **ground truth** (top-k đúng tuyệt đối), chạy cùng bộ query qua IVF/HNSW, đo **Recall@k = tỷ lệ kết quả ANN trùng với Flat**. Có con số mới vặn nút có cơ sở.
+
+### 6. FAISS (thư viện) vs Vector DB (sản phẩm)
+FAISS chỉ lo tìm kiếm trong bộ nhớ. Vector DB (Chroma, Qdrant, Weaviate, Milvus, pgvector…) là sản phẩm bọc quanh một engine (nhiều cái dùng chính FAISS/HNSW bên trong) + persistence + metadata filter + API service + CRUD + phân tán.
+
+| | FAISS | Vector DB |
+|---|---|---|
+| Bản chất | Thư viện tìm kiếm | Sản phẩm/dịch vụ hoàn chỉnh |
+| Metadata filter | Không (tự lo) | Có sẵn |
+| Persistence | Tự `write_index` | Tự động |
+| Chạy như service | Không | Có |
+| Khi nào chọn | Nhúng vào code, prototype, toàn quyền | Sản phẩm thật, nhiều người dùng, cần filter + CRUD |
+
+### 7. Ba câu phỏng vấn kinh điển
+- *Vector DB khác SQL?* → SQL khớp chính xác/khoảng; vector DB tìm theo **tương đồng ngữ nghĩa** qua k-NN trên embedding.
+- *Khi nào Flat, khi nào IVF/HNSW?* → Flat khi N nhỏ (chính xác 100%); IVF/HNSW khi N lớn tới mức brute-force quá chậm, chấp nhận recall < 100% đổi tốc độ — **và phải đo recall**.
+- *FAISS có phải vector database?* → Không. FAISS là thư viện; vector DB là sản phẩm bọc quanh nó (persistence, filter, service, CRUD).
+
+---
+
+## IV-quater. Sinh câu trả lời (Generation) & Đánh giá
+
+### 1. Thiết kế prompt cho RAG — bốn chân
+1. **Ràng buộc kiến thức:** chỉ dùng thông tin trong `<context>`, cấm kiến thức ngoài/suy diễn.
+2. **Trả lời từng phần (partial answer):** trả lời phần có căn cứ, nói rõ phần nào không tìm thấy — thay vì "được ăn cả ngã về không". Hữu ích hơn mà vẫn trung thực.
+3. **Xử lý sửa đổi:** nếu context có cả bản gốc lẫn bản sửa đổi cùng một điều, ưu tiên bản mới + nêu rõ.
+4. **Fallback:** khi context không chứa câu trả lời, trả đúng một câu "Không tìm thấy thông tin trong tài liệu".
+
+### 2. Ngưỡng cosine KHÔNG chặn được câu ngoài phạm vi → giao cho LLM
+Câu ngoài phạm vi vẫn đạt 0.80–0.81 (xem IV-bis mục 2). Không đặt được ngưỡng cứng. Giải pháp: đưa top-k chunk cho LLM kèm chỉ thị fallback, để **LLM tự đánh giá độ liên quan** và từ chối. Thực nghiệm: câu "nghỉ thai sản" được fallback đúng dù 5 chunk vẫn cấp với điểm 0.80.
+
+### 3. Dựng context: chỉ đưa trường có tín hiệu
+- Đưa metadata nguồn (Điều, văn bản, số hiệu) tách khỏi nội dung để LLM trích dẫn.
+- **Số Khoản/Điểm nằm sẵn trong nội dung** → không cần metadata khoản; chỉ thị LLM tự đọc số thứ tự trong text. Nguyên tắc: thông tin đã có trong nội dung thì đừng nhân bản vào metadata.
+- Trường trống là **nhiễu, không phải trung tính** → dòng ghi chú sửa đổi phải dựng **có điều kiện** (chỉ chèn khi `sua_doi`/`sua_doi_cho` khác rỗng), không để `[Sửa đổi]: /` trơ trọi.
+
+### 4. Gọi API LLM — phân biệt mã lỗi HTTP
+- **429** = hết hạn ngạch (rate limit) → giảm tần suất / chờ reset quota.
+- **503** = server quá tải nhất thời → **retry + exponential backoff** (chờ 1, 2, 4, 8s).
+- **500** = lỗi server. **400** = lỗi request của mình (prompt sai định dạng).
+- Đọc đúng mã mới sửa đúng cách. "Không chạy được" nhưng 429 ≠ 503.
+
+### 5. Đánh giá bám nguồn (faithfulness) — hai trục tách biệt
+- **Groundedness:** nội dung câu trả lời có thật sự nằm trong chunk truy hồi không (chống ảo giác)?
+- **Độ chính xác trích dẫn:** đường dẫn Điều/Khoản/Điểm có trỏ đúng chỗ không?
+- Tách hai trục vì một câu trả lời có thể **grounded nhưng sai đường dẫn** — nội dung thật, gán nhầm số điều. Loại lỗi nguy hiểm nhất vì nhìn rất đáng tin.
+- **Ghim (input, output) cùng một lần chạy** vào artifact (`eval_runs.json`): LLM sinh không tất định, không được ghép output lần này với context dựng lại lần khác.
+
+### 6. Kết quả đánh giá thực tế (6 câu hỏi)
+- **Groundedness 6/6** — không bịa nội dung; fallback đúng cho câu ngoài phạm vi.
+- **Trích dẫn: 4/6 chính xác hoàn toàn** (các câu không dính sửa đổi). 2/6 sai đường dẫn — đều là **chunk sửa đổi có cấu trúc lồng hai tầng** (NĐ 111 Điều 1 Khoản 5 → Điều 10 mới Khoản 1 Điểm a): LLM bỏ mất tầng giữa. Nguyên nhân là cấu trúc dữ liệu, không phải năng lực LLM.
+- **Retrieval trượt** (câu "nhãn lưu thông tại VN"): chunk đúng nhất (part_1) không lọt top-k, part_2 lọt vào → câu trả lời lệch chủ đề. Bằng chứng thật cho nhu cầu **parent-child retrieval**.
+
+---
+
 ## V. Xử lý dữ liệu thực tế
 
 ### 1. Nhận dạng định dạng file
@@ -188,6 +269,9 @@ Hai part cắt ra từ cùng một Điều bị **xé điểm**: part chứa ng�
 7. **Đúng kết luận nhưng sai bằng chứng vẫn là chưa đạt** — ở phỏng vấn người ta xoáy vào bằng chứng.
 8. **Việc dọn dữ liệu phải in log**, không được im lặng.
 9. **Ưu tiên end-to-end trước khi tối ưu một khâu:** một RAG hoàn chỉnh còn thô có giá trị hơn một khâu tiền xử lý hoàn hảo mà chưa có gì để demo.
+10. **Output LLM "nhìn đúng" chưa phải "đo đúng":** giọng chuyên nghiệp + trích dẫn chi tiết dễ ru ngủ; phải đối chiếu từng trích dẫn với nguồn gốc mới biết thật hay bịa.
+11. **Đọc traceback dài từ dưới lên, tìm mốc `During handling of the above exception`** để thấy nguyên nhân gốc. Lỗi báo ở tầng ngoài (`'str' has no attribute 'text'`) thường chỉ là hệ quả — truy về hàm trả về gì.
+12. **Nhất quán trong trình bày:** một bảng đánh giá phải chọn một mức chi tiết (mỗi trích dẫn một dòng, HOẶC mỗi câu một dòng) rồi áp cho toàn bộ, không trộn.
 
 ---
 
@@ -205,6 +289,9 @@ Hai part cắt ra từ cùng một Điều bị **xé điểm**: part chứa ng�
 | Vector store / vector database | Kho vector |
 | Retrieval / top-k | Truy hồi / k kết quả gần nhất |
 | Groundedness / faithfulness | Tính bám nguồn / trung thực với tài liệu |
+| Generation | Sinh câu trả lời (khâu cuối RAG) |
+| Fallback | Từ chối trả lời khi không có căn cứ |
+| Exponential backoff | Chờ tăng gấp đôi khi retry (1,2,4,8s) |
 | Truncation | Cắt cụt (do vượt giới hạn token) |
 | Contrastive learning | Học tương phản |
 | Bi-encoder | Mã hóa hai nhánh (câu hỏi & tài liệu riêng) |

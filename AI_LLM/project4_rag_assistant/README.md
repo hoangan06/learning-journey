@@ -1,6 +1,6 @@
 # Trợ lý hỏi–đáp RAG trên văn bản pháp quy chuỗi cung ứng FMCG
 
-> **Trạng thái:** đang thực hiện — đã xong thu thập dữ liệu, chunking, embedding & truy hồi ngữ nghĩa; tiếp theo là sinh câu trả lời có trích dẫn và đánh giá.
+> **Trạng thái:** hoàn thành — pipeline RAG end-to-end chạy được, trả lời kèm trích dẫn nguồn, có đánh giá bám nguồn (faithfulness).
 
 ## Mục tiêu
 Xây dựng trợ lý hỏi–đáp (RAG) trả lời câu hỏi về **quy định pháp luật áp dụng cho vận hành chuỗi cung ứng ngành hàng tiêu dùng nhanh (FMCG)**, câu trả lời **bắt buộc kèm trích dẫn nguồn** đến từng Điều/Khoản của văn bản gốc.
@@ -63,14 +63,31 @@ Với mỗi chunk vượt ngưỡng, phần bị cắt được **giải mã ra 
 
 **Phát hiện quan trọng:** câu hỏi ngoài phạm vi vẫn đạt cosine 0.80–0.81 (chỉ thấp hơn chút so với 0.84–0.90 của câu trong phạm vi) ⇒ **không thể dùng ngưỡng điểm cố định** để phát hiện "không có trong tài liệu"; việc này phải giao cho LLM ở khâu sinh câu trả lời.
 
-## Kết quả hiện tại
+### 6. Sinh câu trả lời có trích dẫn & đánh giá bám nguồn
+- Sinh câu trả lời bằng **Gemini API** (gọi kèm retry + exponential backoff cho lỗi 503). Prompt ràng buộc bốn chân: chỉ dùng ngữ cảnh, trả lời từng phần, ưu tiên bản sửa đổi, fallback khi không có căn cứ. Khóa API đọc từ `.env` (đã loại trừ trong `.gitignore`).
+- Chạy bộ **6 câu hỏi** (5 trong phạm vi + 1 ngoài phạm vi), lưu artifact `eval_runs.json` (ghim input–output cùng lần chạy vì LLM sinh không tất định).
+- **Đánh giá faithfulness** trên hai trục: *groundedness* (nội dung có trong ngữ cảnh?) và *độ chính xác trích dẫn* (đường dẫn Điều/Khoản đúng?).
+
+**Kết quả đánh giá:**
+
+| Chỉ số | Kết quả |
+|---|---|
+| Groundedness | **6/6** — không câu nào bịa nội dung; fallback đúng cho câu ngoài phạm vi |
+| Độ chính xác trích dẫn | **4/6** đúng hoàn toàn (các câu không dính sửa đổi); 2/6 sai đường dẫn ở chunk sửa đổi |
+
+Hai phát hiện: (1) **lỗi trích dẫn ở chunk sửa đổi** do cấu trúc lồng hai tầng (NĐ 111 Điều 1 Khoản 5 → Điều 10 mới Khoản 1) — LLM bỏ mất tầng giữa; (2) **retrieval trượt** ở câu về nhãn lưu thông nội địa — chunk đúng nhất không lọt top-k do một Điều bị cắt thành nhiều part. Cả hai đều có hướng khắc phục ghi trong phần Hạn chế.
+
+## Kết quả
 - `data/chunks.json` — 291 chunk + metadata phục vụ trích dẫn.
 - `data/embeddings.npy` — ma trận embedding (291 × 768), đã chuẩn hóa L2.
+- `data/eval_runs.json` — artifact 6 lần chạy (câu hỏi, chunk truy hồi, ngữ cảnh, câu trả lời).
+- Pipeline RAG end-to-end: câu hỏi → truy hồi → sinh câu trả lời **có trích dẫn**, tự từ chối khi ngoài phạm vi.
 
-## Đang làm tiếp
-- [ ] Sinh câu trả lời có trích dẫn nguồn bằng LLM (Gemini API), tự nói "không tìm thấy" khi context không chứa câu trả lời
-- [ ] Đánh giá chất lượng retrieval (Recall@k) và tính bám nguồn (groundedness)
-- [ ] So sánh 2–3 mô hình embedding trên bộ câu hỏi thật
+## Hướng cải tiến (đã xác định từ đánh giá)
+- **Parent-child retrieval:** khi một part trúng, nở về Điều cha (`parent_id` đã lưu sẵn) — khắc phục retrieval trượt do cắt part.
+- **Metadata trích dẫn chuẩn** cho chunk sửa đổi (`trich_dan_chuan`) — khắc phục lỗi đường dẫn lồng hai tầng.
+- **So sánh 2–3 mô hình embedding** (gte-multilingual-base, halong_embedding) trên bộ câu hỏi thật, đo Recall@k.
+- **Hybrid search** (BM25 + vector) cho mã văn bản/số hiệu.
 
 ## Hạn chế đã biết
 - **Phụ lục dạng bảng chưa được xử lý** — trong đó có Phụ lục I của NĐ 43 (danh mục nội dung bắt buộc ghi nhãn theo nhóm hàng hóa). Hướng xử lý: chuyển mỗi dòng bảng thành câu văn xuôi trước khi chunk.
@@ -82,8 +99,9 @@ Với mỗi chunk vượt ngưỡng, phần bị cắt được **giải mã ra 
 ## File
 - `rag_fmcg_chunking.ipynb` — thu thập, khảo sát, trích xuất và chunking dữ liệu
 - `rag_fmcg_embedding.ipynb` — vector hóa & truy hồi ngữ nghĩa
+- `rag_fmcg_qa_eval.ipynb` — sinh câu trả lời có trích dẫn & đánh giá bám nguồn
 - `Tong_hop_kien_thuc_4.md` — tổng hợp kiến thức RAG & xử lý dữ liệu
-- `data/` — văn bản gốc (`.docx`, `raw_html/`), `chunks.json`, `embeddings.npy`
+- `data/` — văn bản gốc (`.docx`, `raw_html/`), `chunks.json`, `embeddings.npy`, `eval_runs.json`
 
 ## Công nghệ
-Python, BeautifulSoup, python-docx, PyMuPDF, regex, pandas, sentence-transformers (multilingual-e5), HuggingFace tokenizers.
+Python, BeautifulSoup, python-docx, PyMuPDF, regex, pandas, sentence-transformers (multilingual-e5), HuggingFace tokenizers, FAISS (khái niệm), Gemini API. Kỹ thuật RAG: chunking theo cấu trúc, contextual chunking, kiểm soát token, truy hồi ngữ nghĩa, prompt engineering, đánh giá faithfulness.
