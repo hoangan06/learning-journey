@@ -1,0 +1,9 @@
+# Vector store dựng lại được từ chunks.json + embeddings.npy -> không commit
+data/chroma_db/
+
+# Khoá API — không bao giờ commit
+.env
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

@@ -1,0 +1,10 @@
+# Phiên bản đã kiểm chứng trong conda env `ai` (2026-08-21)
+llama-index-core==0.14.24
+llama-index-llms-google-genai==0.10.0     # llama-index-llms-gemini đã ngừng hỗ trợ từ v0.6.2
+llama-index-embeddings-huggingface==0.7.0
+llama-index-vector-stores-chroma==0.5.5
+chromadb==1.5.9
+ragas==0.4.3
+datasets
+sentence-transformers
+python-dotenv
