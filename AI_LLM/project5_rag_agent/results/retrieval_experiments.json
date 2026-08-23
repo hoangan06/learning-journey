@@ -1,0 +1,263 @@
+{
+  "variants": [
+    {
+      "name": "k3_nopc",
+      "top_k": 3,
+      "parent_child": false,
+      "amendments": false,
+      "recall": 0.78125,
+      "precision": 0.375,
+      "full_recall": 0.625,
+      "mrr": 0.7708333333333334,
+      "ctx_chars": 2977.0625,
+      "n_chunks": 3,
+      "recall_single": 1.0,
+      "recall_multi": 0.5625,
+      "recall_amended": 0.5555555555555556,
+      "misses": [
+        "mh01:15/2018/NĐ-CP_Điều_7_part_1,15/2018/NĐ-CP_Điều_7_part_2",
+        "mh02:111/2021/NĐ-CP_Điều_1_Khoản_7,43/2017/NĐ-CP_Điều_15",
+        "mh04:61/VBHN-VPQH_Điều_38",
+        "mh05:15/2018/NĐ-CP_Điều_6",
+        "mh06:15/2018/NĐ-CP_Điều_6",
+        "mh08:111/2021/NĐ-CP_Điều_1_Khoản_5_part_1"
+      ]
+    },
+    {
+      "name": "k3_nopc_amend",
+      "top_k": 3,
+      "parent_child": false,
+      "amendments": true,
+      "recall": 0.78125,
+      "precision": 0.3645833333333333,
+      "full_recall": 0.625,
+      "mrr": 0.7708333333333334,
+      "ctx_chars": 2996.125,
+      "n_chunks": 3.0625,
+      "recall_single": 1.0,
+      "recall_multi": 0.5625,
+      "recall_amended": 0.5555555555555556,
+      "misses": [
+        "mh01:15/2018/NĐ-CP_Điều_7_part_1,15/2018/NĐ-CP_Điều_7_part_2",
+        "mh02:111/2021/NĐ-CP_Điều_1_Khoản_7,43/2017/NĐ-CP_Điều_15",
+        "mh04:61/VBHN-VPQH_Điều_38",
+        "mh05:15/2018/NĐ-CP_Điều_6",
+        "mh06:15/2018/NĐ-CP_Điều_6",
+        "mh08:111/2021/NĐ-CP_Điều_1_Khoản_5_part_1"
+      ]
+    },
+    {
+      "name": "k3_pc",
+      "top_k": 3,
+      "parent_child": true,
+      "amendments": false,
+      "recall": 0.8020833333333334,
+      "precision": 0.340625,
+      "full_recall": 0.6875,
+      "mrr": 0.7708333333333334,
+      "ctx_chars": 4060.25,
+      "n_chunks": 3.6875,
+      "recall_single": 1.0,
+      "recall_multi": 0.6041666666666666,
+      "recall_amended": 0.6666666666666666,
+      "misses": [
+        "mh01:15/2018/NĐ-CP_Điều_7_part_1,15/2018/NĐ-CP_Điều_7_part_2",
+        "mh02:111/2021/NĐ-CP_Điều_1_Khoản_7,43/2017/NĐ-CP_Điều_15",
+        "mh04:61/VBHN-VPQH_Điều_38",
+        "mh05:15/2018/NĐ-CP_Điều_6",
+        "mh06:15/2018/NĐ-CP_Điều_6"
+      ]
+    },
+    {
+      "name": "k3_pc_amend",
+      "top_k": 3,
+      "parent_child": true,
+      "amendments": true,
+      "recall": 0.8020833333333334,
+      "precision": 0.3302083333333333,
+      "full_recall": 0.6875,
+      "mrr": 0.7708333333333334,
+      "ctx_chars": 4079.3125,
+      "n_chunks": 3.75,
+      "recall_single": 1.0,
+      "recall_multi": 0.6041666666666666,
+      "recall_amended": 0.6666666666666666,
+      "misses": [
+        "mh01:15/2018/NĐ-CP_Điều_7_part_1,15/2018/NĐ-CP_Điều_7_part_2",
+        "mh02:111/2021/NĐ-CP_Điều_1_Khoản_7,43/2017/NĐ-CP_Điều_15",
+        "mh04:61/VBHN-VPQH_Điều_38",
+        "mh05:15/2018/NĐ-CP_Điều_6",
+        "mh06:15/2018/NĐ-CP_Điều_6"
+      ]
+    },
+    {
+      "name": "k5_nopc",
+      "top_k": 5,
+      "parent_child": false,
+      "amendments": false,
+      "recall": 0.9166666666666666,
+      "precision": 0.28750000000000003,
+      "full_recall": 0.875,
+      "mrr": 0.7708333333333334,
+      "ctx_chars": 5335.375,
+      "n_chunks": 5,
+      "recall_single": 1.0,
+      "recall_multi": 0.8333333333333334,
+      "recall_amended": 0.6666666666666666,
+      "misses": [
+        "mh01:15/2018/NĐ-CP_Điều_7_part_2",
+        "mh02:111/2021/NĐ-CP_Điều_1_Khoản_7,43/2017/NĐ-CP_Điều_15"
+      ]
+    },
+    {
+      "name": "k5_nopc_amend",
+      "top_k": 5,
+      "parent_child": false,
+      "amendments": true,
+      "recall": 0.9166666666666666,
+      "precision": 0.27566964285714285,
+      "full_recall": 0.875,
+      "mrr": 0.7708333333333334,
+      "ctx_chars": 5635.5625,
+      "n_chunks": 5.3125,
+      "recall_single": 1.0,
+      "recall_multi": 0.8333333333333334,
+      "recall_amended": 0.6666666666666666,
+      "misses": [
+        "mh01:15/2018/NĐ-CP_Điều_7_part_2",
+        "mh02:111/2021/NĐ-CP_Điều_1_Khoản_7,43/2017/NĐ-CP_Điều_15"
+      ]
+    },
+    {
+      "name": "k5_pc",
+      "top_k": 5,
+      "parent_child": true,
+      "amendments": false,
+      "recall": 0.9375,
+      "precision": 0.23906249999999998,
+      "full_recall": 0.9375,
+      "mrr": 0.7708333333333334,
+      "ctx_chars": 7328.6875,
+      "n_chunks": 6.375,
+      "recall_single": 1.0,
+      "recall_multi": 0.875,
+      "recall_amended": 0.6666666666666666,
+      "misses": [
+        "mh02:111/2021/NĐ-CP_Điều_1_Khoản_7,43/2017/NĐ-CP_Điều_15"
+      ]
+    },
+    {
+      "name": "k5_pc_amend",
+      "top_k": 5,
+      "parent_child": true,
+      "amendments": true,
+      "recall": 0.9375,
+      "precision": 0.2316220238095238,
+      "full_recall": 0.9375,
+      "mrr": 0.7708333333333334,
+      "ctx_chars": 7628.875,
+      "n_chunks": 6.6875,
+      "recall_single": 1.0,
+      "recall_multi": 0.875,
+      "recall_amended": 0.6666666666666666,
+      "misses": [
+        "mh02:111/2021/NĐ-CP_Điều_1_Khoản_7,43/2017/NĐ-CP_Điều_15"
+      ]
+    },
+    {
+      "name": "k10_nopc",
+      "top_k": 10,
+      "parent_child": false,
+      "amendments": false,
+      "recall": 1.0,
+      "precision": 0.1625,
+      "full_recall": 1.0,
+      "mrr": 0.78125,
+      "ctx_chars": 11652,
+      "n_chunks": 10,
+      "recall_single": 1.0,
+      "recall_multi": 1.0,
+      "recall_amended": 1.0,
+      "misses": []
+    },
+    {
+      "name": "k10_nopc_amend",
+      "top_k": 10,
+      "parent_child": false,
+      "amendments": true,
+      "recall": 1.0,
+      "precision": 0.15504807692307693,
+      "full_recall": 1.0,
+      "mrr": 0.78125,
+      "ctx_chars": 11915.1875,
+      "n_chunks": 10.5,
+      "recall_single": 1.0,
+      "recall_multi": 1.0,
+      "recall_amended": 1.0,
+      "misses": []
+    },
+    {
+      "name": "k10_pc",
+      "top_k": 10,
+      "parent_child": true,
+      "amendments": false,
+      "recall": 1.0,
+      "precision": 0.13662101787101788,
+      "full_recall": 1.0,
+      "mrr": 0.78125,
+      "ctx_chars": 14217.1875,
+      "n_chunks": 12.0625,
+      "recall_single": 1.0,
+      "recall_multi": 1.0,
+      "recall_amended": 1.0,
+      "misses": []
+    },
+    {
+      "name": "k10_pc_amend",
+      "top_k": 10,
+      "parent_child": true,
+      "amendments": true,
+      "recall": 1.0,
+      "precision": 0.13012126762126763,
+      "full_recall": 1.0,
+      "mrr": 0.78125,
+      "ctx_chars": 14480.375,
+      "n_chunks": 12.5625,
+      "recall_single": 1.0,
+      "recall_multi": 1.0,
+      "recall_amended": 1.0,
+      "misses": []
+    }
+  ],
+  "out_of_scope": {
+    "config": "k5_pc",
+    "in_scope_top1": {
+      "sh01": 0.8569438457489014,
+      "sh02": 0.8864035606384277,
+      "sh03": 0.8909468054771423,
+      "sh04": 0.904120147228241,
+      "sh05": 0.935532808303833,
+      "sh06": 0.9007018208503723,
+      "sh07": 0.8988871574401855,
+      "sh08": 0.8850882053375244,
+      "mh01": 0.8842037916183472,
+      "mh02": 0.8763596415519714,
+      "mh03": 0.8852731585502625,
+      "mh04": 0.903203547000885,
+      "mh05": 0.8654468655586243,
+      "mh06": 0.9052310585975647,
+      "mh07": 0.9032638669013977,
+      "mh08": 0.9112752676010132
+    },
+    "out_of_scope_top1": {
+      "oos01": 0.8176966309547424,
+      "oos02": 0.8435909152030945,
+      "oos03": 0.8641108274459839,
+      "oos04": 0.8150962591171265
+    },
+    "min_in_scope": 0.8569438457489014,
+    "max_out_of_scope": 0.8641108274459839,
+    "separable": false,
+    "gap": -0.0072
+  }
+}
