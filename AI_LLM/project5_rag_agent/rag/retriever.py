@@ -246,18 +246,41 @@ def _split(s: str) -> list[str]:
     return [x for x in (s or "").split(SEP) if x]
 
 
-def format_context(chunks: Iterable[RetrievedChunk], max_chars: int | None = None) -> str:
+def format_context(chunks: Iterable[RetrievedChunk], max_chars: int | None = None,
+                   amendment_notice: bool = True) -> str:
     """Ghép các đoạn thành context cho LLM, kèm nhãn trích dẫn.
 
     Nhãn `[origin]` được giữ lại có chủ đích: khi đọc trace sẽ thấy ngay đoạn
     nào do vector search lấy về, đoạn nào do mở rộng cấu trúc kéo theo.
+
+    `amendment_notice=False` là CÔNG TẮC THÍ NGHIỆM, không phải tuỳ chọn sản phẩm.
+    Dòng `LƯU Ý: {sua_doi}` là can thiệp rẻ nhất trong cả hệ (một chuỗi có sẵn
+    trong metadata, 0 request LLM, 0 lần truy hồi thêm). Muốn khẳng định nó là
+    thứ giúp trả lời đúng câu bị sửa đổi thì phải tắt nó đi và đo lại — nếu
+    không thì đó chỉ là tương quan.
+    """
+    return "\n\n".join(format_blocks(chunks, max_chars, amendment_notice))
+
+
+def format_blocks(chunks: Iterable[RetrievedChunk], max_chars: int | None = None,
+                  amendment_notice: bool = True) -> list[str]:
+    """Y HỆT `format_context` nhưng trả về TỪNG KHỐI thay vì một chuỗi đã nối.
+
+    Tồn tại vì một lỗi đã trả giá: bản ghi kết quả lưu `contexts = [c.text ...]`
+    (văn bản thô của chunk), trong khi thứ model thật sự nhìn thấy là các khối này
+    — có tiêu đề trích dẫn VÀ dòng `LƯU Ý: {sua_doi}`. Ragas chấm faithfulness
+    trên `retrieved_contexts`, nên nó chấm trên MỘT CONTEXT KHÁC với context đã
+    đưa cho model. Mọi mệnh đề model rút ra từ dòng LƯU Ý đều bị coi là không có
+    căn cứ. Xem notes/03 §3.6 (f).
+
+    Quy tắc rút ra: **thứ đem đi chấm phải đúng là thứ đã đưa cho model.**
     """
     chunks = list(chunks)
     parts, total = [], 0
     for i, c in enumerate(chunks, 1):
         head = f"[{i}] {c.citation} — {c.meta.get('ten_dieu', '')} ({c.origin}"
         head += f", sim={c.score:.3f})" if c.origin == "hit" else ")"
-        if c.meta.get("sua_doi"):
+        if amendment_notice and c.meta.get("sua_doi"):
             head += f"\n    LƯU Ý: {c.meta['sua_doi']}"
         block = f"{head}\n{c.text}"
         if max_chars and total + len(block) > max_chars:
@@ -265,7 +288,7 @@ def format_context(chunks: Iterable[RetrievedChunk], max_chars: int | None = Non
             break
         parts.append(block)
         total += len(block)
-    return "\n\n".join(parts)
+    return parts
 
 
 # --------------------------------------------------------------------------

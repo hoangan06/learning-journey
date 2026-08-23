@@ -80,9 +80,13 @@ def main() -> None:
     assert col.count() == len(chunks), "Số bản ghi không khớp!"
 
     # -- 1. Văn bản lưu trong Chroma có đúng text đã embed không --------------
-    sample = col.get(ids=ids[:50], include=["documents"])
+    # Kiểm TOÀN BỘ, không lấy mẫu. Trước đây chỉ so 50/291 document trong khi
+    # README lại ghi "stored documents match the text that was embedded — pass"
+    # như thể đã kiểm hết. Phép so này không gọi model và không tốn gì đáng kể,
+    # nên lấy mẫu chỉ đổi được vài mili-giây lấy một khẳng định yếu hơn.
+    sample = col.get(ids=ids, include=["documents"])
     by_id = dict(zip(sample["ids"], sample["documents"]))
-    bad = [c["chunk_id"] for c in chunks[:50]
+    bad = [c["chunk_id"] for c in chunks
            if by_id.get(c["chunk_id"]) != c["text_for_embedding"]]
     print(f"  [1] document khớp text_for_embedding: {'OK' if not bad else f'LỆCH {bad[:3]}'}")
 

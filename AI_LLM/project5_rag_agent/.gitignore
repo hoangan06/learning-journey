@@ -1,9 +1,15 @@
 # Vector store dựng lại được từ chunks.json + embeddings.npy -> không commit
 data/chroma_db/
 
+# Cache lời gọi judge của Ragas — dựng lại được, và có thể rất nặng
+results/.ragas_cache/
+
 # Khoá API — không bao giờ commit
 .env
 
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+
+# Sinh ra khi chạy pytest
+.pytest_cache/

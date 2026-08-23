@@ -1,0 +1,144 @@
+{
+  "tag": "baseline",
+  "judge_model": "gemini-3.5-flash-lite",
+  "n": 15,
+  "last_run": {
+    "judge_model": "gemini-3.5-flash-lite",
+    "metrics": [
+      "faithfulness"
+    ],
+    "n": 15,
+    "judge_max_tokens": 4096,
+    "context_source": "shown",
+    "drop_refused": true,
+    "scope": "in_scope_only"
+  },
+  "metric_config": {
+    "non_llm_context_recall": {
+      "judge_model": "gemini-3.5-flash-lite",
+      "n": 16,
+      "coverage": 16,
+      "context_source": "raw",
+      "drop_refused": false,
+      "include_oos": false,
+      "excluded_out_of_scope": [
+        "oos01",
+        "oos02",
+        "oos03",
+        "oos04"
+      ],
+      "excluded_refused": []
+    },
+    "faithfulness": {
+      "judge_model": "gemini-3.5-flash-lite",
+      "n": 15,
+      "coverage": 15,
+      "context_source": "shown",
+      "drop_refused": true,
+      "include_oos": false,
+      "excluded_out_of_scope": [
+        "oos01",
+        "oos02",
+        "oos03",
+        "oos04"
+      ],
+      "excluded_refused": [
+        "mh02"
+      ]
+    }
+  },
+  "coverage": {
+    "faithfulness": 15,
+    "non_llm_context_recall": 16
+  },
+  "reliable": [
+    "faithfulness"
+  ],
+  "partial": [],
+  "failed": [],
+  "aggregate": {
+    "faithfulness": 1.0,
+    "non_llm_context_recall": 0.9375
+  },
+  "per_sample": [
+    {
+      "id": "sh01",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "sh02",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "sh03",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "sh04",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "sh05",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "sh06",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "sh07",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "sh08",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "mh01",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "mh03",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "mh04",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "mh05",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "mh06",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "mh07",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "mh08",
+      "faithfulness": 1.0,
+      "non_llm_context_recall": 1.0
+    },
+    {
+      "id": "mh02",
+      "non_llm_context_recall": 0.0
+    }
+  ]
+}
