@@ -255,9 +255,10 @@ trên dữ liệu không phù hợp.
 ### 3.1 Vì sao cần
 
 Hồi quy logistic giả định log-odds là hàm tuyến tính của biến đầu vào. Quan hệ thật trong
-tín dụng hiếm khi tuyến tính: rủi ro theo tuổi có hình chữ U ngược, người rất trẻ rủi ro
-cao, trung niên thấp, người rất già nhích lên lại vì thu nhập giảm. Nhét thẳng `age` vào
-logistic là ép một đường thẳng qua một đường cong.
+tín dụng hiếm khi tuyến tính. Trong bộ dữ liệu này, `open_credit_lines` có bad rate 10,77%
+ở nhóm 0–3 hạn mức, xuống 5,27% ở nhóm 6–8, rồi lên lại 6,70% ở nhóm nhiều hạn mức nhất.
+Nhét thẳng cột đó vào logistic là ép một đường thẳng qua một đường cong hình chữ U, và
+đường thẳng khớp nhất sẽ gần như nằm ngang.
 
 WOE xử lý bằng cách bỏ hẳn giá trị gốc, thay bằng một con số do chính dữ liệu chỉ ra là mức
 rủi ro của nhóm đó.
@@ -288,7 +289,7 @@ Ví dụ với 10.000 khách, 9.300 good và 700 bad, bad rate chung 7%:
 | age 21–30 | 2.000 | 1.780 | 220 | 11,0% | 0,1914 | 0,3143 | −0,4959 |
 | age 51–60 | 2.500 | 2.420 | 80 | 3,2% | 0,2602 | 0,1143 | +0,8228 |
 
-### 3.3 Đẳng thức đáng nhớ
+### 3.3 Viết lại WOE theo log-odds
 
 Viết lại bằng số đếm thô, với `G_i, B_i` là số good và bad trong bin và `G, B` là tổng:
 
@@ -461,7 +462,7 @@ Cho ngưỡng trượt từ 1 xuống 0, chấm điểm (FPR, TPR). Ở ngưỡn
 lý đúng thứ tự, mỗi bậc ngang là một khách good bị xếp nhầm lên cao. Model hoàn hảo ôm góc
 trên trái, model ngẫu nhiên là đường chéo.
 
-Điều quan trọng nhất về ROC, và tôi sẽ dùng lại nhiều lần: hình dạng của nó chỉ phụ thuộc
+Tính chất của ROC mà tôi dùng lại nhiều lần ở dưới: hình dạng của nó chỉ phụ thuộc
 **thứ tự** điểm số, không phụ thuộc **giá trị** điểm số.
 
 ### 4.4 AUC
@@ -469,7 +470,7 @@ trên trái, model ngẫu nhiên là đường chéo.
 Hình học thì AUC là diện tích dưới ROC, 0,5 là ngẫu nhiên và 1,0 là hoàn hảo. Dưới 0,5 nghĩa
 là xếp hạng ngược, đảo dấu điểm là được model tốt.
 
-Cách hiểu đáng nhớ hơn là cách xác suất: **AUC là xác suất một khách bad lấy ngẫu nhiên có
+Cách hiểu hữu dụng hơn là cách xác suất: **AUC là xác suất một khách bad lấy ngẫu nhiên có
 điểm rủi ro cao hơn một khách good lấy ngẫu nhiên** (chặt chẽ thì cộng thêm nửa xác suất hai
 người bằng điểm). AUC 0,78 nghĩa là bốc ngẫu nhiên một cặp gồm một người sau này vỡ nợ và
 một người không, thì 78% số lần model chấm người vỡ nợ điểm cao hơn.
@@ -863,7 +864,7 @@ Không hỏng: **khả năng xếp hạng của model**. Logistic tối ưu log-
 cho hệ số dốc nhất quán. Có một kết quả cổ điển đóng đinh chuyện này: **Prentice và Pyke
 (1979)** chứng minh rằng dưới case-control sampling, tức lấy mẫu lệch theo nhãn, các hệ số dốc
 của logistic vẫn được ước lượng nhất quán và chỉ intercept bị lệch đúng một lượng đã biết
-bằng log của tỉ lệ lấy mẫu. Nói cách khác, lấy mẫu lệch theo nhãn làm hỏng **mức** chứ không
+bằng log của tỉ lệ lấy mẫu. Lấy mẫu lệch theo nhãn làm hỏng **mức** chứ không
 làm hỏng **hình dạng**. Công thức `logit − ln(w)` ở mục 5.2 là hệ quả trực tiếp của định lý
 này chứ không phải một mẹo vặt.
 
@@ -1148,3 +1149,22 @@ Ghi lại trước khi chạy, để các bước sau kiểm chứ không phải
 | 2 | XGBoost vượt scorecard 0,02–0,06 Gini. Vượt trên 0,10 thì nghi scorecard làm ẩu; thua scorecard thì nghi XGBoost overfit hoặc cài sai | Bước đánh giá |
 | 3 | PSI trên OOT-proxy ngẫu nhiên khoảng 0,0006; trên OOT dịch nhân tạo vượt 0,25 | Bước đánh giá |
 | 4 | Mọi chênh lệch dưới 0,03 Gini trên OOT là chưa kết luận được, vì KTC 95% là ±0,028 | Bước đánh giá |
+
+### Kết quả các giả thuyết đã kiểm
+
+Ba giả thuyết ghi ở `results/iv_report.md` §2 trước khi dựng scorecard, kiểm ở khối 3:
+
+| # | Giả thuyết | Kết quả |
+|---|---|---|
+| 1 | Gộp bin 01 của `revolving_util` làm Gini giảm dưới 0,005, và vấn đề mã lý do biến mất | **Đúng nửa đầu, sai nửa sau.** Gộp không mất gì (+0,00011) nhưng bin gộp vẫn không đơn điệu (bad rate 1,91% so với 1,38% ở bin 03), nên không gộp |
+| 2 | Chữ U của `open_credit_lines` và `real_estate_loans` sống sót trong model đa biến | **Sai**, cho cả hai biến. Ép đơn điệu đúng chiều (rủi ro tăng dần) tốn 0,000 Gini ở cả bốn biến "không đơn điệu" của khối 2 |
+| 3 | Gini test rơi vào 0,60 đến 0,68 | **Sai vì bi quan.** Kết quả 0,6984. Giả thuyết này chỉ là kỳ vọng lúc mở khối 3, không ghi trong file nào trước đó |
+
+Chỗ sai của cả hai giả thuyết đến từ cùng một thói quen: suy từ phép đo đơn biến sang bối cảnh
+đa biến.
+
+Giả thuyết 2 tôi kết luận sai **hai lần trước khi ra đúng**, cả hai lần vì lỗi trong cùng một
+hàm mười dòng: lần đầu `str(k).isdigit()` loại mất bin `3+`, lần sau hàm tự đoán chiều đơn điệu
+và chọn đúng chiều giết nhánh mang thông tin. Chi tiết ở `results/scorecard.md` §3. Bài học
+không phải "cẩn thận hơn" mà là: phép kiểm nào chạy trót lọt và trả về con số hợp lý thì phải
+có đường để nó fail, nếu không nó không kiểm được gì.

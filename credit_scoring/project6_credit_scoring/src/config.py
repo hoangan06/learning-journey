@@ -51,3 +51,22 @@ UTIL_IMPLAUSIBLE = 10.0
 
 IV_THRESHOLDS = {"useless": 0.02, "weak": 0.10, "medium": 0.30, "strong": 0.50}
 PSI_THRESHOLDS = {"stable": 0.10, "watch": 0.25}
+
+# --- Scorecard -------------------------------------------------------------
+# Ba hang so quy dinh thang diem. Chung KHONG anh huong gi den do chinh xac cua
+# model: diem la ham tuyen tinh cua log-odds nen moi bo (PDO, SCORE_BASE,
+# ODDS_BASE) deu cho cung mot thu tu xep hang va cung mot Gini. Chon theo thong
+# le nganh (Siddiqi 2017) de con so quen mat voi nguoi doc.
+PDO = 20          # so diem lam odds gap doi
+SCORE_BASE = 600  # diem quy chieu
+ODDS_BASE = 50    # odds good:bad tai SCORE_BASE
+
+# Bo khoi model cuoi. Ly do: dong gop bien te do bang 5-fold CV trong train la
+# +0,00004 Gini, tuc bo di thi Gini con nhich len. He so am cua no trong model da
+# bien KHONG phai ly do thu hai doc lap (z = -0,68, khong phan biet duoc voi 0),
+# no la cung mot su viec nhin tu goc khac. Xem results/scorecard.md muc 3.
+SCORECARD_DROP = ["open_credit_lines"]
+
+# Tien to cua nhan bin dac biet: ma trang thai chu khong phai khoang gia tri.
+# Chung khong nam tren truc gia tri nen phai dung ngoai moi phep ep don dieu.
+SPECIAL_BIN_PREFIXES = ("X_", "9_")
