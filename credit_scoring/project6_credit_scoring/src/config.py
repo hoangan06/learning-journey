@@ -63,10 +63,35 @@ ODDS_BASE = 50    # odds good:bad tai SCORE_BASE
 
 # Bo khoi model cuoi. Ly do: dong gop bien te do bang 5-fold CV trong train la
 # +0,00004 Gini, tuc bo di thi Gini con nhich len. He so am cua no trong model da
-# bien KHONG phai ly do thu hai doc lap (z = -0,68, khong phan biet duoc voi 0),
+# bien KHONG phai ly do thu hai doc lap (z = -0,79, khong phan biet duoc voi 0),
 # no la cung mot su viec nhin tu goc khac. Xem results/scorecard.md muc 3.
 SCORECARD_DROP = ["open_credit_lines"]
 
 # Tien to cua nhan bin dac biet: ma trang thai chu khong phai khoang gia tri.
 # Chung khong nam tren truc gia tri nen phai dung ngoai moi phep ep don dieu.
 SPECIAL_BIN_PREFIXES = ("X_", "9_")
+
+# --- Chia bin don dieu (khoi 4) ---------------------------------------------
+# Chieu don dieu cua TUNG bien, khai bao theo nghia nghiep vu chu KHONG tu doan
+# tu du lieu. WOE o day dinh huong theo good, nen:
+#   "giam" = WOE giam dan theo bin, tuc RUI RO TANG theo gia tri bien
+#   "tang" = WOE tang dan theo bin, tuc RUI RO GIAM theo gia tri bien
+#
+# Vi sao phai khai bao tay: voi bien hinh chu U thi hai chieu cho hai ket qua
+# khac han (o bo nay chenh nhau toi 0,05 Gini), va de mot heuristic doan ho la
+# de mot quyet dinh lon phu thuoc vao thu khong ai nhin. Khoi 3 da mac dung loi
+# do mot lan. Moi dong duoi day phai bao ve duoc bang mot cau nghiep vu.
+MONOTONE_DIRECTION = {
+    "revolving_util":    "giam",  # dung cang nhieu han muc cang rui ro
+    "debt_ratio_valid":  "giam",  # no tren thu nhap cang cao cang rui ro
+    "late_30_59":        "giam",  # cang nhieu lan tre cang rui ro
+    "late_60_89":        "giam",
+    "late_90":           "giam",
+    "real_estate_loans": "giam",  # don bay bat dong san cang lon cang rui ro
+    "dependents":        "giam",  # cang nhieu nguoi phu thuoc, ganh nang cang lon
+    "age":               "tang",  # cang lon tuoi cang it rui ro
+    "monthly_income":    "tang",  # thu nhap cang cao cang it rui ro
+}
+
+# Bang sinh ra boi sql/features_mono.sql, song song voi bang cua khoi 2.
+TABLE_BIN_MAP = "bin_map"

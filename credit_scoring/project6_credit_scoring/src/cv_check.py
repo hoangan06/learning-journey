@@ -12,9 +12,11 @@ moi quyet dinh chon bien deu ra doi trong train.
 from __future__ import annotations
 
 import re
+import warnings
 
 import numpy as np
 import pandas as pd
+from scipy.linalg import LinAlgWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 
@@ -140,6 +142,20 @@ def _design(fit, apply_, vars_, merge=None, monotone=None):
     return Xa, Xb
 
 
+def make_folds(n, k=5, seed=None):
+    """Chia n dong thanh k fold, tai lap tu seed.
+
+    Tach ra thanh ham rieng de model cay o khoi 4 dung DUNG bo fold nay. Neu hai
+    model duoc do tren hai bo fold khac nhau thi phep so sanh theo cap mat y
+    nghia: phan phuong sai do fold khong con triet tieu, ma o bo nay phuong sai
+    do fold (bien do 0,021 Gini) lon gap nhieu lan chenh lech can do.
+    """
+    seed = config.SEED if seed is None else seed
+    idx = np.arange(n)
+    np.random.default_rng(seed).shuffle(idx)
+    return np.array_split(idx, k)
+
+
 def gini_cv(bins, vars_, merge=None, monotone=None, k=5, seed=None):
     """Gini tren tung fold, WOE tinh lai trong fold. Tra ve mang k phan tu.
 
@@ -147,15 +163,30 @@ def gini_cv(bins, vars_, merge=None, monotone=None, k=5, seed=None):
     """
     seed = config.SEED if seed is None else seed
     tr = bins[bins.split == "train"].reset_index(drop=True)
-    idx = np.arange(len(tr))
-    np.random.default_rng(seed).shuffle(idx)
-    folds = np.array_split(idx, k)
+    folds = make_folds(len(tr), k, seed)
     out = []
     for f in range(k):
         va = tr.iloc[folds[f]]
         fit = tr.iloc[np.concatenate([folds[i] for i in range(k) if i != f])]
         Xa, Xb = _design(fit, va, vars_, merge, monotone)
-        lr = LogisticRegression(C=1e12, max_iter=2000).fit(Xa, 1 - fit.target.values)
+        # Bo cot hang so truoc khi fit. Ep don dieu SAI chieu gop het bin thuong
+        # thanh mot muc, cot con lai la hang so, va khi do Hessian suy bien: khong
+        # phai loi ma la dinh nghia, vi mot cot hang so bi intercept hap thu hoan
+        # toan nen he so cua no khong xac dinh. Bo di cho ket qua y het ma khong
+        # lam solver phai chuyen sang lbfgs giua chung.
+        giu = Xa.std(axis=0) > 0
+        Xa, Xb = Xa[:, giu], Xb[:, giu]
+        # penalty=None + newton-cholesky tol=1e-12: xem docstring scorecard.fit_logit,
+        # C=1e12 voi tol mac dinh khong hoi tu toi MLE (|gradient| ~ 5,7 tren bo nay).
+        # Ep SAI chieu lam cot chi con hai muc, mot trong hai chiem 177/105.000 dong,
+        # nen Hessian gan suy bien va newton-cholesky se canh bao roi tu chuyen sang
+        # lbfgs. Do khong phai su co ma la dung dieu dang do: mot cot gan hang so thi
+        # he so cua no gan nhu khong xac dinh. Tat canh bao O DAY va chi o day, vi
+        # truong hop nay da hieu; moi canh bao khac van phai noi ra.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", LinAlgWarning)
+            lr = LogisticRegression(C=np.inf, solver="newton-cholesky",
+                                    max_iter=1000, tol=1e-12).fit(Xa, 1 - fit.target.values)
         p = lr.predict_proba(Xb)[:, 1]
         out.append(2 * roc_auc_score(1 - va.target.values, p) - 1)
     return np.array(out)
@@ -173,7 +204,10 @@ def paired(base, other):
     # t Student 97,5% voi k-1 bac tu do. Bao ca khoang chu khong chi bao d va t:
     # phan lon ket luan o day la ket luan NULL ("khong do duoc chenh lech nao"),
     # ma mot ket luan null chi co nghia khi noi kem no loai tru duoc den dau.
-    tcrit = {2: 12.706, 3: 4.303, 4: 2.776, 5: 2.571, 9: 2.262}.get(len(d) - 1)
+    # Khoa la BAC TU DO (k-1), khong phai k. Ban dau bang nay bi lech mot bac o
+    # hai khoa dau (df=2 giu gia tri cua df=1), khong anh huong bang nao trong du
+    # an vi moi phep deu k=5, nhung se lam KTC rong gap ba neu ai do goi voi k=3.
+    tcrit = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 9: 2.262}.get(len(d) - 1)
     if tcrit is None:
         from scipy import stats
         tcrit = float(stats.t.ppf(0.975, len(d) - 1))

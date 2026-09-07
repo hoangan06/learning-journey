@@ -19,22 +19,22 @@ một phép kiểm một dòng: mọi hệ số phải dương. Sai số chuẩn
 
 |                   |   hệ số |     SE |        z |
 |:------------------|--------:|-------:|---------:|
-| (intercept)       |  2.6059 | 0.0152 | 171.792  |
-| age               |  0.3687 | 0.0318 |  11.5771 |
-| debt_ratio_valid  |  0.7985 | 0.0531 |  15.0293 |
-| dependents        |  0.2421 | 0.0758 |   3.1934 |
-| late_30_59        |  0.5204 | 0.0155 |  33.5086 |
-| late_60_89        |  0.3683 | 0.017  |  21.6043 |
-| late_90           |  0.5155 | 0.0139 |  37.1489 |
-| monthly_income    |  0.1007 | 0.0543 |   1.8534 |
-| open_credit_lines | -0.0399 | 0.0584 |  -0.683  |
-| real_estate_loans |  0.5531 | 0.0644 |   8.5939 |
-| revolving_util    |  0.6291 | 0.0151 |  41.5302 |
+| (intercept)       |  2.6053 | 0.0152 | 171.8246 |
+| age               |  0.3784 | 0.0319 |  11.8617 |
+| debt_ratio_valid  |  0.7891 | 0.0531 |  14.8491 |
+| dependents        |  0.2577 | 0.0758 |   3.4022 |
+| late_30_59        |  0.5201 | 0.0155 |  33.4908 |
+| late_60_89        |  0.3676 |  0.017 |  21.5634 |
+| late_90           |  0.5158 | 0.0139 |  37.1745 |
+| monthly_income    |  0.0947 | 0.0543 |   1.7432 |
+| open_credit_lines | -0.0462 | 0.0584 |  -0.7911 |
+| real_estate_loans |  0.5578 | 0.0643 |   8.6698 |
+| revolving_util    |   0.627 | 0.0151 |  41.4085 |
 
 | | Gini | KS |
 |---|---|---|
 | train | 0.7165 | 0.5571 |
-| test | 0.6984 | 0.5470 |
+| test | 0.6985 | 0.5484 |
 
 Hệ số quanh 1 là kỳ vọng có lý do: WOE đã ở đơn vị log-odds, nên một biến là nguồn thông tin
 duy nhất sẽ có hệ số đúng bằng 1. Nhỏ hơn 1 nghĩa là thông tin đó đã có phần nằm trong biến
@@ -42,13 +42,13 @@ khác nên model chiết khấu bớt.
 
 Hai chỗ cần dừng lại.
 
-`open_credit_lines` có hệ số **âm** (-0,0399), z = -0,68. Âm trong quy ước này nghĩa là model
+`open_credit_lines` có hệ số **âm** (-0,0462), z = -0,79. Âm trong quy ước này nghĩa là model
 đảo ngược thứ tự WOE của biến: bin mà phân tích đơn biến gọi là an toàn thì trong bối cảnh
 đa biến lại xấu hơn. Nhưng z nhỏ hơn 1 nên hệ số không phân biệt được với 0, và câu đúng là
 model **không tìm thấy gì** ở biến này sau khi đã có chín biến kia. Cần đo đóng góp biên chứ
 không đọc dấu.
 
-Gini test 0,6984 nằm ngoài khoảng 0,60 đến 0,68 tôi đoán trước khi fit, cao hơn cận
+Gini test 0,6985 nằm ngoài khoảng 0,60 đến 0,68 tôi đoán trước khi fit, cao hơn cận
 trên. Đoán sai vì bi quan: tôi trừ hao phần chồng lấn giữa các biến nhiều hơn thực tế. Vẫn
 dưới ngưỡng báo động 0,72 nên không đổi kết luận về leakage. Con số này là kỳ vọng tôi đặt lúc
 mở khối 3 chứ không nằm trong bảng giả thuyết ở `notes_credit_scoring.md` §10, nên nó không có
@@ -62,7 +62,7 @@ cùng sức nặng với hai dự đoán ghi trong `results/iv_report.md`.
 sẵn cột WOE trong `features_woe`, vốn tính trên toàn bộ train, thì fold đánh giá đã góp phần
 tạo ra feature của chính nó và chênh lệch đo được sẽ lạc quan.
 
-So sánh **theo cặp trên cùng fold**: Gini giữa các fold dao động 0,7005 đến 0,7215, biên độ
+So sánh **theo cặp trên cùng fold**: Gini giữa các fold dao động 0,7004 đến 0,7215, biên độ
 khoảng 0,021, lớn gấp nhiều lần mọi chênh lệch cần đo. Trừ theo từng fold thì phần phương sai
 do fold triệt tiêu.
 
@@ -79,28 +79,28 @@ Gini CV của model đủ: **0,71513**.
 Cột "Gini đơn biến" là model chỉ có một biến đó; "Gini khi bỏ" là model thiếu nó; `d` là hiệu
 so với model đủ, nên âm nhiều là quan trọng. Hai cột đo trên cùng năm fold nên so được trực tiếp.
 
-| biến              |   Gini đơn biến |   Gini khi bỏ |        d |      se |         t |   ktc_lo |   ktc_hi | 5 fold cùng dấu   |
+| biến             |   Gini đơn biến |   Gini khi bỏ |        d |      se |         t |   ktc_lo |   ktc_hi | 5 fold cùng dấu   |
 |:------------------|----------------:|--------------:|---------:|--------:|----------:|---------:|---------:|:------------------|
-| revolving_util    |         0.56001 |       0.66404 | -0.05109 | 0.00175 | -29.2695  | -0.05593 | -0.04624 | True              |
-| late_30_59        |         0.38181 |       0.68308 | -0.03205 | 0.00193 | -16.575   | -0.03742 | -0.02668 | True              |
-| late_90           |         0.31247 |       0.68826 | -0.02687 | 0.00177 | -15.1418  | -0.0318  | -0.02194 | True              |
-| late_60_89        |         0.24133 |       0.70283 | -0.0123  | 0.00125 |  -9.80039 | -0.01578 | -0.00881 | True              |
-| debt_ratio_valid  |         0.14836 |       0.70879 | -0.00634 | 0.00142 |  -4.46965 | -0.01028 | -0.0024  | True              |
-| age               |         0.26733 |       0.71156 | -0.00358 | 0.00073 |  -4.89725 | -0.0056  | -0.00155 | True              |
-| real_estate_loans |         0.11936 |       0.71213 | -0.003   | 0.00089 |  -3.36639 | -0.00547 | -0.00053 | True              |
-| monthly_income    |         0.15349 |       0.71496 | -0.00017 | 5e-05   |  -3.38718 | -0.00031 | -3e-05   | True              |
-| dependents        |         0.09925 |       0.71505 | -8e-05   | 0.00022 |  -0.35107 | -0.00068 |  0.00053 | False             |
-| open_credit_lines |         0.12249 |       0.71517 |  4e-05   | 4e-05   |   1.13826 | -6e-05   |  0.00015 | False             |
+| revolving_util    |         0.56001 |       0.66406 | -0.05107 | 0.00178 | -28.7422  | -0.056   | -0.04614 | True              |
+| late_30_59        |         0.38181 |       0.68307 | -0.03206 | 0.00194 | -16.5432  | -0.03744 | -0.02668 | True              |
+| late_90           |         0.31247 |       0.68827 | -0.02686 | 0.00178 | -15.0876  | -0.0318  | -0.02192 | True              |
+| late_60_89        |         0.24133 |       0.70283 | -0.0123  | 0.00127 |  -9.71849 | -0.01581 | -0.00879 | True              |
+| debt_ratio_valid  |         0.14836 |       0.70882 | -0.00631 | 0.00141 |  -4.48936 | -0.01021 | -0.00241 | True              |
+| age               |         0.26733 |       0.71152 | -0.0036  | 0.00074 |  -4.88669 | -0.00565 | -0.00156 | True              |
+| real_estate_loans |         0.11936 |       0.71213 | -0.003   | 0.0009  |  -3.34144 | -0.00549 | -0.00051 | True              |
+| monthly_income    |         0.15349 |       0.71497 | -0.00016 | 5e-05   |  -3.43585 | -0.00029 | -3e-05   | True              |
+| dependents        |         0.09925 |       0.71506 | -6e-05   | 0.00023 |  -0.27604 | -0.0007  |  0.00058 | False             |
+| open_credit_lines |         0.12249 |       0.71518 |  6e-05   | 4e-05   |   1.46102 | -5e-05   |  0.00017 | False             |
 
 Đặt cạnh nhau thì hai cột nói hai chuyện khác nhau, và đây là bài học chính của cả khối:
 
 | biến | Gini đơn biến | đóng góp biên |
 |---|---|---|
-| `monthly_income` | 0,15349 | −0,00017 |
-| `debt_ratio_valid` | 0,14836 | −0,00634 |
-| `open_credit_lines` | 0,12249 | +0,00004 |
+| `monthly_income` | 0,15349 | −0,00016 |
+| `debt_ratio_valid` | 0,14836 | −0,00631 |
+| `open_credit_lines` | 0,12249 | +0,00006 |
 | `real_estate_loans` | 0,11936 | −0,00300 |
-| `dependents` | 0,09925 | −0,00008 |
+| `dependents` | 0,09925 | −0,00006 |
 
 `monthly_income` mạnh nhất nhóm này khi đứng một mình nhưng đóng góp gần bằng không, còn
 `real_estate_loans` gần yếu nhất lại đóng góp gấp gần 20 lần. Sức mạnh đơn biến đo *biến đó
@@ -147,7 +147,7 @@ cấu trúc.
 
 ## 3. Hai dự đoán ghi trước
 
-Mục này tôi viết lại hai lần, vì hai lỗi khác nhau trong cùng một hàm mười dòng của chính tôi.
+Mục này viết lại hai lần, vì hai lỗi khác nhau trong cùng một hàm mười dòng.
 Cả hai ghi ở cuối mục.
 
 ### Với hai biến nhiều bin, ép sai chiều không phải là ép mà là xoá biến
@@ -158,12 +158,20 @@ góp biên xác nhận:
 
 | biến | ép sai chiều (tăng) | bỏ hẳn biến |
 |---|---|---|
-| `revolving_util` | -0,05133 | −0,05109 |
-| `debt_ratio_valid` | -0,00628 | −0,00634 |
+| `revolving_util` | −0,05119 | −0,05107 |
+| `debt_ratio_valid` | −0,00647 | −0,00631 |
 
-Trùng nhau tới chữ số thứ tư, qua hai đường đi khác hẳn: một bên PAVA gộp bin rồi fit lại, một
-bên bỏ cột khỏi ma trận. Đây là phép kiểm chéo tình cờ có được cho cả bộ máy CV, và tôi ghi lại
-vì cả khối này xoay quanh chuyện phép kiểm phải có đường để fail.
+Hai cột gần bằng nhau, qua hai đường đi khác hẳn: một bên PAVA gộp bin rồi fit lại, một bên bỏ
+cột khỏi ma trận.
+
+Bản đầu tôi gọi đây là "một phép kiểm chéo tình cờ có được cho cả bộ máy CV". Nói vậy là quá
+tay, và nó vi phạm đúng tiêu chuẩn mà cả khối này dựng lên. Ép sai chiều gộp **toàn bộ** bin
+thường thành một hằng số, mà một cột hằng số thì bị intercept hấp thụ hoàn toàn, nên "ép sai
+chiều" bằng "bỏ cột" **theo cấu tạo** chứ không phải theo dữ liệu. Phép kiểm này gần như không
+có đường để fail. Cái nó thật sự xác nhận chỉ là code chạy đúng như mô tả.
+
+(Sau khi sửa lỗi hội tụ ở `fit_logit`, `gini_cv` bỏ hẳn cột hằng số trước khi fit, vì Hessian
+của nó suy biến. Chênh lệch còn lại giữa hai cột là do bin đặc biệt vẫn nằm ngoài phép ép.)
 
 ### Ép đúng chiều thì mất bao nhiêu
 
@@ -172,10 +180,10 @@ với 4 bậc tự do):
 
 | biến | mức còn lại | d | KTC 95% của d | cái giá xấu nhất |
 |---|---|---|---|---|
-| `revolving_util` | 8/10 | +0,00006 | [−0,00133; +0,00146] | 0,00133 |
-| `debt_ratio_valid` | 6/10 | +0,00085 | [−0,00052; +0,00222] | 0,00052 |
-| `real_estate_loans` | 2/4 | +0,00006 | [−0,00154; +0,00166] | 0,00154 |
-| `open_credit_lines` | 2/10 | −0,00006 | [−0,00042; +0,00030] | 0,00042 |
+| `revolving_util` | 8/10 | +0,00006 | [−0,00135; +0,00146] | 0,00135 |
+| `debt_ratio_valid` | 6/10 | +0,00083 | [−0,00052; +0,00218] | 0,00052 |
+| `real_estate_loans` | 2/4 | +0,00004 | [−0,00157; +0,00164] | 0,00157 |
+| `open_credit_lines` | 2/10 | +0,00070 | [−0,00067; +0,00207] | 0,00067 |
 
 Cột cuối rất dễ lấy nhầm đầu, và tôi đã lấy nhầm một lần. `d = Gini(phương án) − Gini(model
 đủ)`, nên **cái giá là −d**, và cái giá xấu nhất mà dữ liệu còn cho phép là **−ktc_lo**, tức đầu
@@ -184,9 +192,13 @@ trong khi cái giá xấu nhất thật ra chỉ 0,0005, nên lấy nhầm đầ
 kết luận của mình.
 
 Câu đúng **không** phải "tốn 0,000 Gini", vì dữ liệu không nói được điều đó. Câu đúng là: cái
-giá xấu nhất còn tương thích với dữ liệu ở mức tin cậy 95% là **0,0015 Gini** trên cả bốn biến,
-và **0,0013** nếu chỉ tính hai biến đáng đem đi dùng. Con số đó nhỏ hơn một bậc so với 0,0062
-đến 0,0214 mà khối 2 đo đơn biến, và nhỏ hơn nhiều so với ±0,028 là khoảng tin cậy của chính
+giá xấu nhất còn tương thích với dữ liệu ở mức tin cậy 95% là **0,0016 Gini** trên cả bốn biến,
+và **0,0014** nếu chỉ tính hai biến đáng đem đi dùng. Một chỗ phải nói rõ: bốn dòng trên đo
+**từng biến một**, mà max của bốn cái giá riêng lẻ không phải cận trên của cái giá khi ép cả
+bốn cùng lúc. Ép đồng thời thì phải đo đồng thời, và khối 4 đã làm: ép cả chín biến cho
+`d = −0,00024` với cái giá xấu nhất **0,0019**. Kết luận định tính không đổi, nhưng con số
+đúng để trích là 0,0019 chứ không phải 0,0015. Con số đó nhỏ hơn một bậc so với 0,0063
+đến 0,0205 mà khối 2 đo đơn biến, và nhỏ hơn nhiều so với ±0,028 là khoảng tin cậy của chính
 Gini trên tập OOT. Ở quy mô dữ liệu này nó không đo được.
 
 Cột mức còn lại tách bảng thành hai nhóm rất khác nhau, và đây mới là chỗ có nội dung.
@@ -210,9 +222,10 @@ thân biến cũng không mang gì. Với `real_estate_loans`, chữ U rút đư
 gì, nên hình chữ U không phải thứ mang thông tin; cái mang thông tin là contrast "có từ ba
 khoản bất động sản trở lên hay không".
 
-Ở khối 2, `open_credit_lines` được đo là đáng **0,0214 Gini** khi so đơn biến.
-`real_estate_loans` thì khối 2 **không có số CV nào**; tôi chỉ đọc hình chữ U của nó từ bảng
-bad rate, và đó chính là cách đọc mà khối này bác.
+Ở khối 2, `open_credit_lines` được đo là đáng **0,0176 Gini** khi so đơn biến, ép chiều tăng.
+`real_estate_loans` thì bảng CV của khối 2 **không có dòng nào**; tôi chỉ đọc hình chữ U của nó
+từ bảng bad rate, và đó chính là cách đọc mà khối này bác. (Dòng còn thiếu đó đã được bổ sung
+khi rà soát lại, xem `results/iv_report.md` §2: +0,0205 ép chiều tăng, +0,1005 ép chiều giảm.)
 
 Vì sao `open_credit_lines` không mang gì: nhánh trái của nó là nhóm bị hạn chế tín dụng,
 utilization trung vị 0,439 so với 0,137 ở đáy chữ U, mà `revolving_util` là biến mạnh nhất
@@ -238,7 +251,7 @@ thì hỏng, 1,73% so với 1,83% thì xong.
 thấp vì tỉ lệ sử dụng hạn mức cao", không kèm ngoại lệ "trừ khi anh dùng quá ít".
 
 Cần nói rõ nó sửa được gì và không sửa được gì. Nó xoá cái móc ở bin 01 của `revolving_util`,
-đúng chỗ tôi không giải thích được với khách hàng. Nó **không** sửa được việc 84,5% hồ sơ bị từ
+đúng chỗ tôi không giải thích được với khách hàng. Nó **không** sửa được việc 84,7% hồ sơ bị từ
 chối nhận cùng một lý do ở mục 8: nguyên nhân của con số đó là `revolving_util` chi phối model,
 và ép đơn điệu chỉ rút biên độ của biến đó xuống chút ít chứ không đổi bản chất.
 
@@ -282,20 +295,20 @@ là hệ số Wald của biến trong model cuối, z = 8,66 trên toàn bộ tr
 
 ### Quyết định
 
-**`open_credit_lines` bị loại**, vì đóng góp biên bằng không (+0,00004) đo bằng CV trong train.
-Hệ số âm ở mục 1 **không phải lý do thứ hai độc lập**: z = −0,68 nên nó không phân biệt được
+**`open_credit_lines` bị loại**, vì đóng góp biên bằng không (+0,00006) đo bằng CV trong train.
+Hệ số âm ở mục 1 **không phải lý do thứ hai độc lập**: z = −0,79 nên nó không phân biệt được
 với 0, và nó là cùng một sự việc nhìn từ góc khác. Nó là hệ quả không bảo vệ được về mặt nghiệp
 vụ: giữ biến lại thì bảng điểm sẽ trừ điểm người có ít hạn mức hơn, và tôi không có câu trả lời
 nào đúng cho câu hỏi đó.
 
-`monthly_income` (−0,00017) và `dependents` (−0,00008) cũng gần bằng không nhưng **giữ lại**:
+`monthly_income` (−0,00016) và `dependents` (−0,00006) cũng gần bằng không nhưng **giữ lại**:
 dấu đúng, đóng góp không âm, và là hai biến bên kinh doanh mong thấy trong một scorecard. Bỏ
 chúng đổi lấy 0,0002 Gini là đổi một câu hỏi khó lấy một con số không đo được.
 
 Khối 2 còn để lại một cảnh báo: chỗ chồng lấn thật nằm ở cặp `debt_ratio_valid` và
 `monthly_income` (31.365 dòng dùng chung thông tin missing), và nếu có hệ số lạ thì nhìn ở đó
-trước. Nửa đúng: `monthly_income` đúng là bị chiết khấu gần hết (hệ số 0,0884, z = 1,64) trong
-khi `debt_ratio_valid` giữ nguyên sức mạnh (0,8030); nhưng chỗ **lật dấu** lại rơi vào một biến
+trước. Nửa đúng: `monthly_income` đúng là bị chiết khấu gần hết (hệ số 0,0901, z = 1,67) trong
+khi `debt_ratio_valid` giữ nguyên sức mạnh (0,7969); nhưng chỗ **lật dấu** lại rơi vào một biến
 không nằm trong cảnh báo đó.
 
 ### Đọc bảng gộp bin của `real_estate_loans`
@@ -304,9 +317,9 @@ Bốn dòng `real_estate` phải đọc cùng nhau, vì đọc lẻ thì mâu th
 
 | phép gộp | bảng bin còn lại | d |
 |---|---|---|
-| gộp 0 vào 1 | nhóm 0+1 −0,024 · bin 2 +0,188 · bin 3+ −0,256 | −0,00174 |
-| gộp 3+ vào 2 | bin 0 −0,238 · bin 1 +0,260 · nhóm 2+3+ +0,065 | −0,00156 |
-| gộp 0,1,2 | nhóm 0+1+2 +0,021 · bin 3+ −0,256 | +0,00007 |
+| gộp 0 vào 1 | nhóm 0+1 −0,024 · bin 2 +0,188 · bin 3+ −0,256 | −0,00173 |
+| gộp 3+ vào 2 | bin 0 −0,238 · bin 1 +0,260 · nhóm 2+3+ +0,065 | −0,00158 |
+| gộp 0,1,2 | nhóm 0+1+2 +0,021 · bin 3+ −0,256 | +0,00004 |
 | gộp hết | một bin | −0,00300 |
 
 Dòng thứ ba nói toàn bộ đóng góp của biến nằm ở contrast `3+` so với phần còn lại. Nhưng dòng
@@ -314,17 +327,21 @@ thứ hai xoá đúng contrast đó mà chỉ mất một nửa, và lý do là 
 gộp 2 với 3+ có WOE +0,065, vẫn nằm dưới bin 1 (+0,260), nên một phiên bản pha loãng của cùng
 contrast sống sót.
 
-Dòng đầu mất 0,00174 dù nhánh trái được cho là không mang gì. Cơ chế: gộp bin 0 (WOE −0,238)
+Dòng đầu mất 0,00173 dù nhánh trái được cho là không mang gì. Cơ chế: gộp bin 0 (WOE −0,238)
 với bin 1 (+0,260) tạo ra một contrast giả giữa nhóm gộp (−0,024) và bin 2 (+0,188), và một hệ
 số duy nhất buộc phải quy contrast giả đó thành điểm. Hai dòng đầu vì vậy không đo "giá trị của
 một nhánh", chúng đo hậu quả của việc gộp hai bin ngược dấu; chỉ dòng ba và dòng bốn mới trả
 lời được câu hỏi ban đầu.
 
-Dòng "gộp 0,1,2" cho `d` = +0,00007 còn "ép giảm" ở bảng trên cho +0,00006, và hai con số trùng
-nhau **không phải tình cờ**: cả hai đều rút biến xuống đúng hai mức, mà một cột chỉ có hai mức
-thì mọi cách gán giá trị đều sai khác nhau một phép biến đổi affine, nên logistic fit ra cùng
-một model. Chênh 1e-05 còn lại là do hai đường tính WOE khác nhau, một bên tính lại trên bảng
-đã gộp (+0,021) và một bên lấy trung bình có trọng số của khối PAVA (+0,044).
+Dòng "gộp 0,1,2" và dòng "ép giảm" ở bảng trên cho **đúng cùng một con số** `d` = +0,00004, và
+đó **không phải tình cờ**: cả hai đều rút biến xuống đúng hai mức, mà một cột chỉ có hai mức thì
+mọi cách gán giá trị đều sai khác nhau một phép biến đổi affine, nên logistic fit ra cùng một
+model.
+
+Bản đầu hai con số này lệch nhau 1e-05 và tôi giải thích rằng đó là do hai đường tính WOE khác
+nhau (+0,021 so với +0,044). Giải thích đó **tự mâu thuẫn**: nếu hai cột affine với nhau thì giá
+trị WOE khác nhau không thể đổi kết quả fit. Phần dư 1e-05 là nhiễu tối ưu hoá của lỗi hội tụ
+nói ở mục 1, và sau khi sửa `fit_logit` thì nó biến mất hẳn. Một con số dư nhỏ mà có sẵn lời giải thích nghe hợp lý thì rất dễ trôi qua.
 
 ### Việc để lại từ khối 2: rủi ro leakage của `late_90`
 
@@ -335,12 +352,12 @@ Gộp bin sentinel vào bin 0, tức giả vờ 193 dòng đó không có trễ 
 fold cùng dấu. 0,18% dữ liệu mà đáng 0,0024 Gini là nhiều, đúng như bad rate 55,96% của nhóm
 đó báo trước.
 
-Bỏ hẳn `late_90` mất 0,0269. Bỏ cả ba biến `late_*` làm Gini rơi từ 0,715 xuống 0,591, mất
+Bỏ hẳn `late_90` mất 0,0269. Bỏ cả ba biến `late_*` làm Gini rơi từ 0,715 xuống 0,590, mất
 0,1246, tức **17% sức mạnh của model nằm ở lịch sử trễ hạn**.
 
 Con số 0,1246 là **cận trên** của thiệt hại nếu hoá ra cửa sổ đo feature chồng lấn cửa sổ
 target, cận trên vì nó bỏ toàn bộ ba biến chứ không chỉ phần chồng lấn. Ngay ở kịch bản xấu
-nhất đó scorecard còn Gini 0,591, vẫn dùng được. Rủi ro leakage ở đây là rủi ro **phóng đại
+nhất đó scorecard còn Gini 0,590, vẫn dùng được. Rủi ro leakage ở đây là rủi ro **phóng đại
 thành tích**, không phải rủi ro model rỗng.
 
 ---
@@ -351,16 +368,16 @@ Chín biến, chia bin giữ nguyên như khối 2, không gộp bin nào.
 
 |                   |   hệ số |     SE |        z |
 |:------------------|--------:|-------:|---------:|
-| (intercept)       |  2.6069 | 0.0152 | 171.778  |
-| age               |  0.3763 | 0.0319 |  11.801  |
-| debt_ratio_valid  |  0.803  | 0.0522 |  15.3747 |
-| dependents        |  0.2508 | 0.0755 |   3.3193 |
-| late_30_59        |  0.5223 | 0.0154 |  34.0177 |
-| late_60_89        |  0.368  | 0.017  |  21.5926 |
-| late_90           |  0.515  | 0.0137 |  37.4832 |
-| monthly_income    |  0.0884 | 0.054  |   1.6357 |
-| real_estate_loans |  0.5466 | 0.0631 |   8.6595 |
-| revolving_util    |  0.6254 | 0.0147 |  42.6708 |
+| (intercept)       |  2.6052 | 0.0152 | 171.8416 |
+| age               |  0.3777 | 0.0319 |  11.8466 |
+| debt_ratio_valid  |  0.7969 | 0.0522 |  15.2637 |
+| dependents        |  0.2626 | 0.0755 |   3.4791 |
+| late_30_59        |  0.5219 | 0.0153 |  34.0035 |
+| late_60_89        |   0.368 |  0.017 |   21.601 |
+| late_90           |  0.5143 | 0.0137 |  37.4431 |
+| monthly_income    |  0.0901 |  0.054 |   1.6683 |
+| real_estate_loans |  0.5477 | 0.0631 |   8.6822 |
+| revolving_util    |  0.6239 | 0.0146 |  42.6105 |
 
 | | Gini | KS |
 |---|---|---|
@@ -371,7 +388,7 @@ Mọi hệ số dương, Gini test bằng đúng model 10 biến. Đây là báo
 quyết định bỏ `open_credit_lines` đã ra đời ở mục 3 bằng CV trong train, và nếu test có nói
 ngược thì tôi vẫn phải giữ quyết định đó rồi ghi lại mâu thuẫn, chứ không được đổi ý theo test.
 
-`monthly_income` có z = 1,64, p ≈ 0,10, không có ý nghĩa ở mức 5%. Có một mâu thuẫn bề
+`monthly_income` có z = 1,67, p ≈ 0,10, không có ý nghĩa ở mức 5%. Có một mâu thuẫn bề
 ngoài đáng nói: CV bảo bỏ nó làm Gini giảm 0,00017 với t = −3,39 (có ý nghĩa), Wald bảo hệ số
 không khác 0. Hai phép kiểm hỏi hai câu khác nhau. Wald hỏi hệ số có khác 0 trên một mẫu
 train; CV ghép cặp hỏi việc bỏ biến có làm giảm Gini nhất quán qua các fold, và vì ghép cặp
@@ -425,7 +442,7 @@ tuyệt đối giữa hai biến khác nhau là vô nghĩa, chỉ chênh lệch 
 | late_90           |    16 |    68 |        52 |
 | late_30_59        |    19 |    71 |        52 |
 | late_60_89        |    30 |    66 |        36 |
-| debt_ratio_valid  |    48 |    70 |        22 |
+| debt_ratio_valid  |    49 |    70 |        21 |
 | age               |    56 |    75 |        19 |
 | real_estate_loans |    58 |    67 |         9 |
 | dependents        |    60 |    66 |         6 |
@@ -435,7 +452,7 @@ Biên độ là dạng đọc được nhất của hệ số: `revolving_util` 
 xấu nhất, tức 2,85 lần PDO, nên riêng biến này đã làm odds chênh 2^2,85 ≈ 7 lần.
 `monthly_income` chênh 3 điểm, gần như không tham gia quyết định.
 
-Tổng điểm chạy từ 384 đến 640. Thang hẹp so với các thang thương mại (FICO 300 đến 850)
+Tổng điểm chạy từ 385 đến 640. Thang hẹp so với các thang thương mại (FICO 300 đến 850)
 vì nó là **hệ quả** của model chứ không phải thiết kế: biên độ bằng Factor nhân biên độ
 log-odds mà chín biến này tạo ra được.
 
@@ -454,7 +471,7 @@ Cột "thiếu" là số điểm mất so với bin tốt nhất của chính bi
 |    05 | 10402 |    7.84 | -0.1713 |     61 |      14 |
 |    06 |  9918 |    6.31 |  0.0613 |     63 |      12 |
 |    07 |  9352 |    4.88 |  0.3346 |     66 |       9 |
-|    08 | 11443 |    4.1  |  0.5164 |     68 |       7 |
+|    08 | 11443 |    4.10 |  0.5164 |     68 |       7 |
 |    09 | 10018 |    2.76 |  0.9275 |     73 |       2 |
 |    10 | 10000 |    2.18 |  1.1675 |     75 |       0 |
 
@@ -462,106 +479,106 @@ Cột "thiếu" là số điểm mất so với bin tốt nhất của chính bi
 
 | bin       |     n |   bad % |     WOE |   điểm |   thiếu |
 |:----------|------:|--------:|--------:|-------:|--------:|
-| 01        |  8303 |    4.91 |  0.3264 |     70 |       0 |
-| 02        |  8303 |    6.95 | -0.0418 |     62 |       8 |
-| 03        |  8302 |    6.49 |  0.0311 |     63 |       7 |
-| 04        |  8303 |    6.02 |  0.1114 |     65 |       5 |
-| 05        |  8301 |    5.01 |  0.3057 |     70 |       0 |
-| 06        |  8303 |    5.43 |  0.2208 |     68 |       2 |
-| 07        |  8301 |    6.3  |  0.0632 |     64 |       6 |
-| 08        |  8302 |    7.58 | -0.135  |     59 |      11 |
-| 09        |  8302 |    9.41 | -0.3714 |     54 |      16 |
-| 10        |  8302 |   11.62 | -0.6077 |     48 |      22 |
-| X_INVALID | 21977 |    5.59 |  0.19   |     67 |       3 |
+|    01 |  8303 |    4.91 |  0.3264 |     70 |       0 |
+|    02 |  8303 |    6.95 | -0.0418 |     62 |       8 |
+|    03 |  8302 |    6.49 |  0.0311 |     63 |       7 |
+|    04 |  8303 |    6.02 |  0.1114 |     65 |       5 |
+|    05 |  8301 |    5.01 |  0.3057 |     70 |       0 |
+|    06 |  8303 |    5.43 |  0.2208 |     68 |       2 |
+|    07 |  8301 |    6.30 |  0.0632 |     64 |       6 |
+|    08 |  8302 |    7.58 | -0.1350 |     59 |      11 |
+|    09 |  8302 |    9.41 | -0.3714 |     54 |      16 |
+|    10 |  8302 |   11.62 | -0.6077 |     49 |      21 |
+| X_INVALID | 21977 |    5.59 |  0.1900 |     67 |       3 |
 
 #### `dependents`
 
 | bin       |     n |   bad % |     WOE |   điểm |   thiếu |
 |:----------|------:|--------:|--------:|-------:|--------:|
-| 0         | 60920 |    5.84 |  0.1433 |     64 |       2 |
-| 1         | 18377 |    7.5  | -0.1246 |     62 |       4 |
-| 2         | 13625 |    8.07 | -0.2039 |     61 |       5 |
-| 3+        |  9324 |    9.19 | -0.3458 |     60 |       6 |
-| 9_MISSING |  2753 |    4.43 |  0.4348 |     66 |       0 |
+|     0 | 60920 |    5.84 |  0.1433 |     64 |       0 |
+|     1 | 18377 |    7.50 | -0.1246 |     62 |       2 |
+|     2 | 13625 |    8.07 | -0.2039 |     61 |       3 |
+|    3+ |  9324 |    9.19 | -0.3458 |     60 |       4 |
+| 9_MISSING |  2753 |    4.43 |  0.4348 |     66 |      -2 |
 
 #### `late_30_59`
 
 | bin        |     n |   bad % |     WOE |   điểm |   thiếu |
 |:-----------|------:|--------:|--------:|-------:|--------:|
-| 0          | 88270 |    3.98 |  0.5473 |     71 |       0 |
-| 1          | 11189 |   15.28 | -0.9237 |     49 |      22 |
-| 2          |  3173 |   26.32 | -1.6067 |     38 |      33 |
-| 3-4        |  1771 |   37.72 | -2.1348 |     30 |      41 |
-| 5+         |   403 |   45.91 | -2.4722 |     25 |      46 |
-| 9_SENTINEL |   193 |   55.96 | -2.8758 |     19 |      52 |
+|     0 | 88270 |    3.98 |  0.5473 |     71 |       0 |
+|     1 | 11189 |   15.28 | -0.9237 |     49 |      22 |
+|     2 |  3173 |   26.32 | -1.6067 |     38 |      33 |
+|   3-4 |  1771 |   37.72 | -2.1348 |     30 |      41 |
+|    5+ |   403 |   45.91 | -2.4722 |     25 |      46 |
+| 9_SENTINEL |   193 |   55.96 | -2.8758 |     20 |      48 |
 
 #### `late_60_89`
 
 | bin        |     n |   bad % |     WOE |   điểm |   thiếu |
 |:-----------|------:|--------:|--------:|-------:|--------:|
-| 0          | 99756 |    5.11 |  0.2851 |     66 |       0 |
-| 1          |  3936 |   31.02 | -1.8372 |     43 |      23 |
-| 2          |   778 |   50    | -2.6363 |     34 |      32 |
-| 3+         |   336 |   60.12 | -3.0467 |     30 |      36 |
-| 9_SENTINEL |   193 |   55.96 | -2.8758 |     32 |      34 |
+|     0 | 99756 |    5.11 |  0.2851 |     66 |       0 |
+|     1 |  3936 |   31.02 | -1.8372 |     43 |      23 |
+|     2 |   778 |   50.00 | -2.6363 |     34 |      32 |
+|    3+ |   336 |   60.12 | -3.0467 |     30 |      36 |
+| 9_SENTINEL |   193 |   55.96 | -2.8758 |     20 |      48 |
 
 #### `late_90`
 
 | bin        |     n |   bad % |     WOE |   điểm |   thiếu |
 |:-----------|------:|--------:|--------:|-------:|--------:|
-| 0          | 99149 |    4.64 |  0.3872 |     68 |       0 |
-| 1          |  3662 |   33.42 | -1.9472 |     34 |      34 |
-| 2          |  1109 |   48.6  | -2.5804 |     24 |      44 |
-| 3-4        |   667 |   61.77 | -3.1161 |     16 |      52 |
-| 5+         |   219 |   62.56 | -3.1496 |     16 |      52 |
+|     0 | 99149 |    4.64 |  0.3872 |     68 |       0 |
+|     1 |  3662 |   33.42 | -1.9472 |     34 |      34 |
+|     2 |  1109 |   48.60 | -2.5804 |     24 |      44 |
+|   3-4 |   667 |   61.77 | -3.1161 |     16 |      52 |
+|    5+ |   219 |   62.56 | -3.1496 |     16 |      52 |
 | 9_SENTINEL |   193 |   55.96 | -2.8758 |     20 |      48 |
 
 #### `monthly_income`
 
 | bin       |     n |   bad % |     WOE |   điểm |   thiếu |
 |:----------|------:|--------:|--------:|-------:|--------:|
-| 01        |  8527 |    9.08 | -0.332  |     62 |       2 |
-| 02        |  8103 |    9.74 | -0.4095 |     61 |       3 |
-| 03        |  8389 |    8.62 | -0.2752 |     62 |       2 |
-| 04        |  8218 |    8.35 | -0.2403 |     62 |       2 |
-| 05        |  8309 |    7    | -0.0503 |     62 |       2 |
-| 06        |  8404 |    6.66 |  0.0033 |     62 |       2 |
-| 07        |  8166 |    5.98 |  0.1195 |     63 |       1 |
-| 08        |  8306 |    5    |  0.3089 |     63 |       1 |
-| 09        |  8308 |    4.63 |  0.388  |     63 |       1 |
-| 10        |  8292 |    4.67 |  0.3805 |     63 |       1 |
-| X_MISSING | 20807 |    5.72 |  0.1661 |     63 |       1 |
-| X_ZERO    |  1170 |    3.33 |  0.731  |     64 |       0 |
+|    01 |  8527 |    9.08 | -0.3320 |     62 |       1 |
+|    02 |  8103 |    9.74 | -0.4095 |     61 |       2 |
+|    03 |  8389 |    8.62 | -0.2752 |     62 |       1 |
+|    04 |  8218 |    8.35 | -0.2403 |     62 |       1 |
+|    05 |  8309 |    7.00 | -0.0503 |     62 |       1 |
+|    06 |  8404 |    6.66 |  0.0033 |     62 |       1 |
+|    07 |  8166 |    5.98 |  0.1195 |     63 |       0 |
+|    08 |  8306 |    5.00 |  0.3089 |     63 |       0 |
+|    09 |  8308 |    4.63 |  0.3880 |     63 |       0 |
+|    10 |  8292 |    4.67 |  0.3805 |     63 |       0 |
+| X_MISSING | 20807 |    5.72 |  0.1661 |     63 |       0 |
+| X_ZERO |  1170 |    3.33 |  0.7310 |     64 |      -1 |
 
 #### `real_estate_loans`
 
 | bin   |     n |   bad % |     WOE |   điểm |   thiếu |
 |:------|------:|--------:|--------:|-------:|--------:|
-| 0     | 39283 |    8.33 | -0.2382 |     59 |       8 |
-| 1     | 36645 |    5.23 |  0.2605 |     67 |       0 |
-| 2     | 22087 |    5.6  |  0.1884 |     65 |       2 |
-| 3+    |  6984 |    8.46 | -0.2552 |     58 |       9 |
+|     0 | 39283 |    8.33 | -0.2382 |     59 |       8 |
+|     1 | 36645 |    5.23 |  0.2605 |     67 |       0 |
+|     2 | 22087 |    5.60 |  0.1884 |     65 |       2 |
+|    3+ |  6984 |    8.46 | -0.2552 |     58 |       9 |
 
 #### `revolving_util`
 
 | bin           |     n |   bad % |     WOE |   điểm |   thiếu |
 |:--------------|------:|--------:|--------:|-------:|--------:|
-| 01            | 10483 |    2.55 |  1.0082 |     81 |      12 |
-| 02            | 10483 |    1.27 |  1.7181 |     93 |       0 |
-| 03            | 10482 |    1.38 |  1.6305 |     92 |       1 |
-| 04            | 10482 |    1.83 |  1.3451 |     87 |       6 |
-| 05            | 10482 |    2.42 |  1.0593 |     82 |      11 |
-| 06            | 10482 |    3.42 |  0.7058 |     75 |      18 |
-| 07            | 10482 |    5.27 |  0.2535 |     67 |      26 |
-| 08            | 10482 |    8.64 | -0.2783 |     57 |      36 |
-| 09            | 10482 |   16.47 | -1.0124 |     44 |      49 |
-| 10            | 10482 |   23.57 | -1.4601 |     36 |      57 |
+|    01 | 10483 |    2.55 |  1.0082 |     81 |      12 |
+|    02 | 10483 |    1.27 |  1.7181 |     93 |       0 |
+|    03 | 10482 |    1.38 |  1.6305 |     92 |       1 |
+|    04 | 10482 |    1.83 |  1.3451 |     87 |       6 |
+|    05 | 10482 |    2.42 |  1.0593 |     82 |      11 |
+|    06 | 10482 |    3.42 |  0.7058 |     75 |      18 |
+|    07 | 10482 |    5.27 |  0.2535 |     67 |      26 |
+|    08 | 10482 |    8.64 | -0.2783 |     57 |      36 |
+|    09 | 10482 |   16.47 | -1.0124 |     44 |      49 |
+|    10 | 10482 |   23.57 | -1.4601 |     36 |      57 |
 | X_IMPLAUSIBLE |   177 |    7.91 | -0.1816 |     59 |      34 |
 
 Hai chi tiết sẽ quay lại ở phần mã lý do.
 
 `revolving_util` bin 01 được 81 điểm, **thiếu 12** so với bin 02. Đó là cái móc từ khối 2, giờ
-có giá cụ thể: 12 điểm là 0,6 PDO, tức odds thấp hơn khoảng 1,5 lần. Người dùng ít hạn mức
+có giá cụ thể: 12 điểm là 0,6 PDO, tức odds thấp hơn khoảng 1,5 lần. Người có ít hạn mức
 nhất bị trừ điểm, và bảng điểm nói thẳng ra thay vì giấu trong hệ số.
 
 `monthly_income` bin `X_ZERO` được **điểm cao nhất** của biến, cao hơn cả nhóm thu nhập cao
@@ -577,14 +594,14 @@ thích được.
 | phép kiểm | kết quả |
 |---|---|
 | điểm chưa làm tròn → log-odds | lệch lớn nhất 6.22e-15 |
-| làm tròn về số nguyên → PD | lệch lớn nhất 2.64 điểm %, trung bình 0.158 điểm % |
+| làm tròn về số nguyên → PD | lệch lớn nhất 2.84 điểm %, trung bình 0.172 điểm % |
 
 Lệch 6e-15 là sai số dấu phẩy động, tức phép quy đổi đúng chính xác chứ không phải xấp
 xỉ. Đáng kiểm vì rất dễ sai dấu hoặc quên chia `b0` cho n, và cái sai đó **không lộ ra ở bất
 kỳ chỉ số xếp hạng nào**: Gini vẫn y nguyên vì thứ tự không đổi, chỉ PD suy ra từ điểm là sai.
 
-Chỗ lệch lớn nhất **không** nằm ở đáy thang như tôi tưởng lúc đầu mà nằm ở giữa, tại 505 điểm,
-nơi PD là 37,6%. Lý do là số học: sai số làm tròn cộng dồn tối đa 9 × 0,5 = 4,5 điểm, tức 0,156
+Chỗ lệch lớn nhất **không** nằm ở đáy thang như tôi tưởng lúc đầu mà nằm ở giữa, tại 488 điểm,
+nơi PD model là 52,1% so với 49,2% đọc từ bảng điểm. Lý do là số học: sai số làm tròn cộng dồn tối đa 9 × 0,5 = 4,5 điểm, tức 0,156
 đơn vị log-odds, và `|ΔPD| ≈ p(1−p)·Δ log-odds`, mà `p(1−p)` cực đại ở p = 0,5. Ở hai đầu thang
 cùng một sai số điểm lại cho sai số PD nhỏ: trung bình chỉ 0,05 điểm phần trăm ở nhóm trên 600
 điểm.
@@ -592,7 +609,7 @@ cùng một sai số điểm lại cho sai số PD nhỏ: trung bình chỉ 0,05
 Làm tròn đổi lấy một bảng điểm cộng được bằng tay. Muốn giảm sai số thì tăng PDO, vì PDO lớn
 hơn nghĩa là mỗi điểm mang ít log-odds hơn.
 
-Phân bố điểm trên train: min 405, p1 466, trung vị 593, p99 631, max 637.
+Phân bố điểm trên train: min 406, p1 466, trung vị 593, p99 631, max 637.
 Lệch trái mạnh, đúng hình dạng của một danh mục có bad rate 6,7%.
 
 ---
@@ -618,7 +635,9 @@ Thang điểm được **định nghĩa** sao cho 600 điểm là odds 50:1 và 
 |     8 |  8835 |    617.41 |          1.13 |        0.71 |      139.24 |        91.42 |
 |     9 | 10439 |    625.83 |          0.85 |        0.36 |      273.71 |       122.4  |
 
-Brier = 0,05031, PD dự báo trung bình 6,678%, bad rate thực 6,684%.
+Brier = 0,05031, PD dự báo trung bình 6,684%, bad rate thực 6,684%. Hai con số bằng nhau tới
+chữ số thứ sáu, đúng như phương trình chuẩn tắc của hợp lý cực đại đòi hỏi; bản đầu ghi 6,678%
+và gọi là "khớp gần như hoàn hảo", trong khi đó là dấu hiệu model chưa hội tụ.
 
 ### test
 
@@ -635,7 +654,7 @@ Brier = 0,05031, PD dự báo trung bình 6,678%, bad rate thực 6,684%.
 |     8 | 2140 |    617.86 |          1.11 |        0.56 |      177.33 |        92.86 |
 |     9 | 2015 |    626.47 |          0.83 |        0.79 |      124.94 |       125.14 |
 
-Brier = 0,05020, PD dự báo trung bình 6,587%, bad rate thực 6,684%.
+Brier = 0,05020, PD dự báo trung bình 6,592%, bad rate thực 6,684%.
 
 Trên train PD dự báo trung bình khớp bad rate thực gần như hoàn hảo, nhưng đó **không phải
 bằng chứng gì cả**: hồi quy logistic ước lượng bằng hợp lý cực đại luôn cho trung bình dự báo
@@ -682,18 +701,18 @@ chưa chắc là thứ thực sự đẩy họ qua ngưỡng.
 
 ### Lý do số 1 tập trung ở đâu
 
-Ngưỡng 580, tập test: 8.315 hồ sơ bị từ chối (37,0%).
+Ngưỡng 580, tập test: 8.291 hồ sơ bị từ chối (36,8%).
 
 |                  |   % hồ sơ bị từ chối |
 |:-----------------|---------------------:|
-| revolving_util   |                 84.5 |
-| late_30_59       |                  7.9 |
+| revolving_util   |                 84.7 |
+| late_30_59       |                  8.7 |
 | late_90          |                  3.7 |
-| debt_ratio_valid |                  2.3 |
 | late_60_89       |                  1.4 |
+| debt_ratio_valid |                  1.4 |
 | age              |                  0.1 |
 
-84,5% hồ sơ bị từ chối nhận cùng một lý do số 1. Về kỹ thuật thì đúng,
+84,7% hồ sơ bị từ chối nhận cùng một lý do số 1. Về kỹ thuật thì đúng,
 `revolving_util` có biên độ 57 điểm nên hầu như luôn thắng. Về mục đích của Regulation B thì
 đây là **vấn đề**: một thông báo từ chối mà 5 trên 6 người nhận nội dung giống hệt nhau thì
 không giúp ai biết mình cần sửa gì.
@@ -740,7 +759,7 @@ không có hồ sơ bị từ chối.
 ## Giới hạn đã biết
 
 - Calibration lệch theo decile ở cả train và test, chưa sửa. Sửa ở khối 5.
-- 84,5% hồ sơ bị từ chối nhận cùng một lý do số 1, thông báo từ chối gần như không mang thông
+- 84,7% hồ sơ bị từ chối nhận cùng một lý do số 1, thông báo từ chối gần như không mang thông
   tin riêng. Cần ghép chủ đề lý do ở mức nghiệp vụ.
 - Bảng ngưỡng cắt tính trên quần thể đã được duyệt, không có reject inference.
 - `revolving_util` bin 01 vẫn chưa có lý do nghiệp vụ nói được với khách hàng. Mục 3 đã tìm

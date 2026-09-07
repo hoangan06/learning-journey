@@ -47,8 +47,11 @@ def _ro_uri(path):
     return Path(path).resolve().as_uri() + "?mode=ro"
 
 
-def load_data(db_path=None, drop=None):
+def load_data(db_path=None, drop=None, mono=False):
     """Doc ba bang can cho scorecard tu credit.db.
+
+    mono=True doc bo bang *_mono cua khoi 4 (bin da gop cho don dieu) thay cho bo
+    bang cua khoi 2. Ca hai bo cung cau truc nen moi buoc phia sau khong doi.
 
     Ma tran model o day duoc dung LAI tu row_bins + woe_lookup chu khong lay san
     bang features_woe cua khoi 2. Hai ly do: ten bien trong row_bins/woe_lookup
@@ -60,12 +63,13 @@ def load_data(db_path=None, drop=None):
     """
     db_path = config.DB_PATH if db_path is None else db_path
     drop = config.SCORECARD_DROP if drop is None else drop
+    sfx = "_mono" if mono else ""
     con = sqlite3.connect(_ro_uri(db_path), uri=True)
     try:
-        long = pd.read_sql("SELECT id, variable, bin FROM row_bins", con)
+        long = pd.read_sql(f"SELECT id, variable, bin FROM row_bins{sfx}", con)
         base = pd.read_sql(f"SELECT id, split, target FROM {config.TABLE}", con)
-        woe = pd.read_sql("SELECT variable, bin, n, n_bad, woe FROM woe_lookup", con)
-        wide_sql = pd.read_sql("SELECT * FROM features_woe", con)
+        woe = pd.read_sql(f"SELECT variable, bin, n, n_bad, woe FROM woe_lookup{sfx}", con)
+        wide_sql = pd.read_sql(f"SELECT * FROM features_woe{sfx}", con)
     finally:
         con.close()
     bins = long.pivot(index="id", columns="variable", values="bin")
@@ -91,13 +95,27 @@ def woe_matrix(bins, woe):
 # --- fit --------------------------------------------------------------------
 
 def fit_logit(X, y):
-    """Logistic gan nhu khong phat, kem SE lay tu Hessian.
+    """Logistic KHONG phat, uoc luong hop ly cuc dai that su, kem SE tu Hessian.
 
-    C=1e12 de bien LogisticRegression thanh MLE thuan: scikit-learn mac dinh L2
-    voi C=1, du de keo he so xuong va lam SE mat y nghia. Scorecard can he so
-    khong bi co lai vi chung se thanh diem, va can SE de doc dau va do tin cay.
+    Ban dau ham nay dung LogisticRegression(C=1e12, max_iter=2000), voi y dinh
+    "phat lon den muc coi nhu khong phat". Y dinh dung nhung cai dat sai: C lon
+    lam ham muc tieu rat phang, con tol mac dinh 1e-4 thi lbfgs dung som. Do
+    duoc tren bo nay: |gradient| tai nghiem = 5,67 thay vi ~0, va sum(p) - sum(y)
+    = +5,67 trong khi MLE bat buoc phai bang 0.
+
+    Cho nen "PD du bao trung binh 6,678% so voi bad rate 6,684%" o bao cao khoi 3
+    KHONG phai mot thanh tich lam tron dep - no chinh la phep kiem hoi tu da fail
+    ma bi doc nham thanh thanh tich. Voi nghiem thuc su thi hai con so bang nhau
+    den chu so thu chin, vi do la phuong trinh chuan tac cua logistic.
+
+    penalty=None bo han so hang phat thay vi lam no nho; newton-cholesky voi
+    tol=1e-12 dua |gradient| ve 6e-10. Sai lech he so so voi ban cu toi 0,012
+    (dependents, ~5%), du de doi mot dong bang diem.
     """
-    lr = LogisticRegression(C=1e12, max_iter=2000).fit(X, y)
+    # C=np.inf thay cho penalty=None: sklearn 1.8 deprecate penalty= va chi ra
+    # dung C=np.inf. Hai cach cho he so trung den chu so thu sau tren sklearn 1.7.
+    lr = LogisticRegression(C=np.inf, solver="newton-cholesky",
+                            max_iter=1000, tol=1e-12).fit(X, y)
     p = lr.predict_proba(X)[:, 1]
     w = p * (1 - p)
     Xd = np.column_stack([np.ones(len(X)), np.asarray(X)])
@@ -164,29 +182,43 @@ def score_to_pd(score, factor, offset):
     return 1.0 / (1.0 + np.exp((np.asarray(score) - offset) / factor))
 
 
+def is_special(b):
+    """Bin dac biet: missing, sentinel, gia tri bat kha tin. Nhan dat theo tien to."""
+    return str(b).startswith(config.SPECIAL_BIN_PREFIXES)
+
+
 # --- ma ly do ---------------------------------------------------------------
 
 def reason_codes(bins, points, top_k=3, col="diem"):
-    """Top-k bien lam mat nhieu diem nhat so voi bin tot nhat cua chinh bien do.
+    """Top-k bien lam mat nhieu diem nhat so voi bin THUONG tot nhat cua bien do.
 
-    Moc so sanh la diem cao nhat bien do co the cho. Cach khac la so voi bin
-    trung binh (neutral) hoac voi mot ho so tham chieu; ECOA Regulation B khong
-    quy dinh cong thuc, chi doi hoi "principal reasons" phai la ly do that su
-    dan den quyet dinh. Lay max points la cach de bao ve nhat vi no tra loi dung
-    cau khach hang hoi: toi mat diem o dau.
+    Moc so la diem cao nhat ma bien do co the cho, NHUNG chi tinh cac bin thuong:
+    bin dac biet (X_, 9_) bi loai khoi tap ung vien lam moc. Day la mot lan sua.
+    Ban dau moc lay max tren moi bin, va do la mot loi nghiep vu: moc cua
+    dependents roi vao 9_MISSING con moc cua monthly_income roi vao X_ZERO, nen
+    ma ly do noi voi khach hang la "anh mat diem vi ho so cua anh KHONG bi thieu
+    du lieu". Do duoc: 365 tren 8.291 ho so bi tu choi (4,4%) nhan mot ma nhu vay.
+
+    Bin dac biet la trang thai cua BAN GHI chu khong phai trang thai tin dung, nen
+    no khong the lam muc chuan de so. Ho so dang nam o mot bin dac biet co diem
+    cao hon moc thi ra thieu diem am va bi loai boi dieu kien L > 0 o duoi.
+
+    Cach khac la so voi bin trung binh (neutral) hoac voi mot ho so tham chieu;
+    ECOA Regulation B khong quy dinh cong thuc, chi doi hoi "principal reasons"
+    phai la ly do that su dan den quyet dinh. Lay max cua bin thuong la cach de
+    bao ve nhat vi no tra loi dung cau khach hang hoi (toi mat diem o dau) va cau
+    tra loi tro toi mot thu khach hang doi duoc.
     """
-    best = points.groupby("variable")[col].max().to_dict()
+    thuong = points[~points.bin.map(is_special)]
+    best = thuong.groupby("variable")[col].max().to_dict()
     lack = {}
     for var, tab in points.groupby("variable"):
         m = dict(zip(tab.bin, tab[col]))
-        v = bins[var].map(m)
-        if v.isna().any():
-            raise ValueError(f"{var}: {int(v.isna().sum())} dong co bin khong co trong bang diem")
-        lack[var] = best[var] - v.values
+        lack[var] = best[var] - bins[var].map(m).values
     L = pd.DataFrame(lack, index=bins.index)
-    # kind='stable': bang diem co nhieu muc thieu diem trung nhau (late_90 bin 3-4
-    # va 5+ cung -52), quicksort mac dinh khong on dinh nen thu tu ma ly do co the
-    # doi giua hai lan chay. Voi mot artefact phuc vu Regulation B thi khong duoc.
+    # kind='stable' vi co nhieu muc thieu diem trung nhau GIUA CAC BIEN (vi du
+    # late_30_59 bin 9_SENTINEL va late_90 bin 3-4 cung thieu 52 diem); khong co
+    # no thi thu tu ma ly do phu thuoc vao thu tu cot.
     order = np.argsort(-L.values, axis=1, kind="stable")[:, :top_k]
     cols = np.array(L.columns)
     rows = []
@@ -219,8 +251,8 @@ def ks(y, s):
     return float((good - bad).abs().max())
 
 
-def main():
-    bins, woe, wide_sql = load_data()
+def main(mono: bool = False):
+    bins, woe, wide_sql = load_data(mono=mono)
     W = woe_matrix(bins, woe)
     cols = list(W.columns)
 
@@ -237,7 +269,10 @@ def main():
     # phu thuoc thu tu - co the van in ra 0.00e+00. Phep kiem phai fail duoc.
     lech = 0.0
     for v in cols:
-        col = ref["woe_" + ("debt_ratio" if v == "debt_ratio_valid" else v)].reindex(W.index)
+        # bang khoi 2 dat cot la woe_debt_ratio con bien la debt_ratio_valid; bang
+        # _mono cua khoi 4 da dat dung ten bien nen khong can nhanh nay nua
+        name = "woe_" + v if ("woe_" + v) in ref.columns else "woe_debt_ratio"
+        col = ref[name].reindex(W.index)
         if col.isna().any():
             raise ValueError(f"{v}: {int(col.isna().sum())} id co trong row_bins ma khong co trong features_woe")
         lech = max(lech, float(np.abs(W[v].values - col.values).max()))
@@ -282,4 +317,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(mono="--mono" in sys.argv)

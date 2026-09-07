@@ -52,16 +52,33 @@ Biến rời rạc và mọi giá trị đặc biệt (missing, zero, sentinel, 
 
 ### Có ép đơn điệu không
 
-Không. Quyết định dựa trên 5-fold cross-validation **bên trong train**, so sánh theo cặp trên
-cùng fold, `d = Gini(giữ nguyên hình) − Gini(ép đơn điệu)`:
+Không. Quyết định dựa trên 5-fold cross-validation **bên trong train**, model một biến, so sánh
+theo cặp trên cùng fold, `d = Gini(giữ nguyên hình) − Gini(ép đơn điệu)`:
 
-| biến | d trung bình | SE | t | 5 fold cùng dấu |
-|---|---|---|---|---|
-| `revolving_util` | +0,0062 | 0,0012 | 5,28 | có |
-| `debt_ratio_valid` | +0,0172 | 0,0041 | 4,18 | có |
-| `open_credit_lines` | +0,0214 | 0,0052 | 4,13 | có |
-| `monthly_income` | +0,0000 | 0,0013 | 0,01 | không |
-| `age` | 0 | — | — | PAVA không gộp gì |
+| biến | chiều ép | d trung bình | SE | t | KTC 95% của d | 5 fold cùng dấu |
+|---|---|---|---|---|---|---|
+| `revolving_util` | giảm | +0,0063 | 0,0018 | 3,43 | [+0,0012; +0,0114] | có |
+| `debt_ratio_valid` | giảm | +0,0146 | 0,0051 | 2,85 | [+0,0004; +0,0289] | có |
+| `open_credit_lines` | tăng | +0,0176 | 0,0040 | 4,38 | [+0,0065; +0,0288] | có |
+| `open_credit_lines` | giảm | +0,1257 | 0,0062 | 20,35 | [+0,1086; +0,1429] | có |
+| `real_estate_loans` | tăng | +0,0205 | 0,0027 | 7,53 | [+0,0130; +0,0281] | có |
+| `real_estate_loans` | giảm | +0,1005 | 0,0047 | 21,49 | [+0,0875; +0,1135] | có |
+| `monthly_income` | tăng | +0,0003 | 0,0004 | 0,72 | [−0,0008; +0,0014] | không |
+| `age` | tăng | 0 | — | — | — | PAVA không gộp gì |
+
+**Bảng này đã được chạy lại.** Bản đầu ghi +0,0062 / +0,0172 / +0,0214 với t từ 4,13 đến 5,28,
+và những con số đó **không tái lập được** bằng code hiện tại ở bất kỳ seed nào tôi thử. Chúng
+được sinh ra bởi một phiên bản `cv_check.py` trước hai lần sửa lỗi ở khối 3, và tôi không khôi
+phục được phiên bản đó để nói chính xác lỗi nào gây ra chênh lệch. Bài học ghi lại vì nó tốn
+của tôi nhiều nhất trong cả dự án: **một bảng số trong báo cáo phải sinh ra từ code đang nằm
+trong repo, không phải từ một lần chạy trong quá khứ.** Từ khối 3 trở đi mọi bảng đều được đối
+chiếu lại với output notebook trước khi commit; bảng này thì không, và nó lọt.
+
+Hai biến hình chữ U có **hai** dòng vì chiều ép không hiển nhiên, và đó là điểm chính: ép sai
+chiều tốn gấp 6 đến 7 lần ép đúng chiều. Với `open_credit_lines` ép chiều giảm còn đưa Gini
+đơn biến xuống **−0,0032**, tức phá huỷ hẳn biến. Bản đầu của bảng này ghi một con số cho
+`open_credit_lines` mà không nói chiều nào, và thiếu hẳn `real_estate_loans` là biến chữ U mạnh
+nhất, trong khi kết luận ngay dưới lại phủ lên cả bốn biến.
 
 Bốn biến có quan hệ không đơn điệu với target, nhưng **không cùng một hình dạng**, và tôi
 đã mô tả sai chỗ này ở bản đầu nên ghi lại cho đúng. Bad rate theo bin, đọc từ `woe_lookup`:
@@ -137,8 +154,10 @@ giải thích ở đầu này.
 Không phải vì kể được câu chuyện. Với `revolving_util` tôi không kể được, và với
 `debt_ratio_valid` thì hình dạng còn khác cả cái tôi tưởng.
 
-Lý do là kết quả CV ở bảng trên: giữ nguyên hình cho Gini cao hơn với t từ 4,1 đến 5,3, cả năm
-fold cùng dấu. Đó là bằng chứng thực nghiệm, không phụ thuộc vào việc có diễn giải được hay
+Lý do là kết quả CV ở bảng trên: giữ nguyên hình cho Gini cao hơn ở mọi biến chữ U, cả năm fold
+cùng dấu. Đọc `d` chứ không đọc `t`: `t` của phép so cặp 5 fold chỉ có 4 bậc tự do, và đổi seed
+thì nó chạy từ 2,6 đến 6,3 trong khi `d` gần như đứng yên. Ở đây `d` nằm trong khoảng 0,006 đến
+0,021 tuỳ biến, và cả năm fold cùng dấu ở mọi biến trừ `monthly_income`. Đó là bằng chứng thực nghiệm, không phụ thuộc vào việc có diễn giải được hay
 không. Trong tài liệu và khi trình bày phải nói đúng như vậy, chứ không mượn một câu chuyện
 nghiệp vụ chưa kiểm chứng để biện minh cho một quyết định đã đo được.
 

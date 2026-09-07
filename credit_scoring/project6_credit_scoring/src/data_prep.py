@@ -75,7 +75,7 @@ def add_flags(df: pd.DataFrame) -> pd.DataFrame:
     # (median 0,29). Khi thu nhap missing hoac bang 0, mau so hong va cot tro
     # thanh so tien tuyet doi (median 1.159 va 930). Nhan nguoc lai tren nhom
     # co thu nhap cho median 1.649 USD/thang, dung co mot khoan tra no hang
-    # thang, nen gia thuyet nay dung vung.
+    # thang, nen gia thuyet nay tuong thich voi du lieu; chua co cach bac no.
     #
     # Neu binning thang tren cot goc thi cac bin cao se toan la nhom thieu thu
     # nhap, tuc bien do "khach co khai thu nhap khong" chu khong con do muc no.

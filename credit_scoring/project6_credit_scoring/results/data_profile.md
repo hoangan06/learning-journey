@@ -95,12 +95,15 @@ Không xác định được mã 96/98 (và cả `NumberOfTimes90DaysLate` nói 
 trước hay sau observation point. Muốn kết luận thì cần cột thời gian hoặc tài liệu định
 nghĩa feature, dataset không có cả hai.
 
-Hai bằng chứng gián tiếp nghiêng về phía hợp lệ, nhưng chỉ là gợi ý:
+Một bằng chứng gián tiếp nghiêng về phía hợp lệ, và chỉ là gợi ý: nếu là cờ hậu nghiệm của
+default thì bad rate phải tiệm cận 100%, trong khi thực tế là 54,65%, gần một nửa nhóm không
+default.
 
-- Nếu là cờ hậu nghiệm của default thì bad rate phải tiệm cận 100%. Thực tế 54,65%, gần
-  một nửa nhóm không default.
-- WOE của nhóm sentinel là −2,82, nằm gọn giữa nhóm "2 lần" (−2,63) và "3–4 lần" (−3,06)
-  trên thang rủi ro tự nhiên. Một cờ rò rỉ thường bật ra ngoài thang.
+Bản đầu của mục này ghi **hai** bằng chứng, thêm rằng WOE của nhóm sentinel (−2,82) nằm gọn
+giữa nhóm "2 lần" (−2,63) và "3–4 lần" (−3,06). Đó không phải bằng chứng thứ hai: WOE là hàm
+đơn điệu của bad rate của chính bin đó, mà bad rate ba nhóm là 49,90% → 54,65% → 60,54%, nên
+việc −2,82 nằm giữa hai số kia là **hệ quả số học** của dữ kiện thứ nhất viết lại bằng đơn vị
+khác. Một cờ rò rỉ có bad rate 54,65% cũng sẽ rơi đúng vào chỗ đó.
 
 Cách xử lý ở bước đánh giá: chạy model có và không có biến này rồi báo cáo chênh lệch
 Gini, để chuyển một câu hỏi không trả lời được thành một giới hạn đã định lượng.
@@ -116,11 +119,20 @@ dòng lớn hơn 1.000. Tách theo tình trạng thu nhập:
 | `MonthlyIncome` missing | 29.731 | 1.159 | 90,04% |
 | `MonthlyIncome = 0` | 1.634 | 930 | 88,56% |
 
-Giả thuyết: mẫu số hỏng nên cột chuyển thành số tiền tuyệt đối. Kiểm bằng cách nhân ngược
-trên nhóm có thu nhập, `DebtRatio × MonthlyIncome` cho median 1.649 USD/tháng và phân vị
-90 là 4.396, đúng cỡ một khoản trả nợ hàng tháng thật. Giả thuyết đứng vững.
+Giả thuyết: mẫu số hỏng nên cột chuyển thành số tiền tuyệt đối. Bằng chứng là **so độ lớn**:
+median 1.159 ở nhóm thiếu thu nhập cùng bậc với khoản trả nợ hàng tháng thật, mà nhân ngược
+`DebtRatio × MonthlyIncome` trên nhóm **có** thu nhập cho median 1.649 USD và phân vị 90 là
+4.396.
 
-Hệ quả: một phần ba số dòng đang mang đơn vị đô la, hai phần ba mang đơn vị tỉ lệ. Nếu
+Phải nói đúng mức phép này chứng minh được gì. Nó được thực hiện trên nhóm mà giả thuyết
+không nói tới: ở nhóm có thu nhập, `debt_ratio` theo định nghĩa đã là payment/income, nên
+`debt_ratio × income = payment` là một đồng nhất thức và ra một median hợp lý gần như hiển
+nhiên. Nó cho biết **thang tham chiếu**, chứ không kiểm được gì về 31.365 dòng thiếu hoặc bằng
+0 thu nhập. Bản đầu viết "giả thuyết đứng vững"; câu đúng là giả thuyết **tương thích với dữ
+liệu và chưa có cách bác**, và cách xử lý (tách nhóm invalid ra một bin riêng) không phụ thuộc
+vào việc giả thuyết đúng hay sai.
+
+Hệ quả: **20,91%** số dòng đang mang đơn vị đô la, phần còn lại mang đơn vị tỉ lệ. Nếu
 binning thẳng trên cột gốc thì các bin cao sẽ toàn nhóm thiếu thu nhập, tức biến đo
 "khách có khai thu nhập không" thay vì đo mức nợ. Phải tách nhóm invalid ra trước.
 
@@ -163,6 +175,35 @@ Nhóm trên 100 có bad rate thấp hơn base rate 6,684%, tức cư xử như m
 không mang thông tin rủi ro. Đây là lỗi dữ liệu. Ngược lại nhóm 1,0–2,0 có bad rate 38–48%,
 là rủi ro thật của người vượt hạn mức nên phải giữ.
 
+**Ngưỡng thực thi rộng hơn bằng chứng ở trên, và đây là một chỗ chưa chặt.** `config.UTIL_IMPLAUSIBLE`
+đặt ở **10**, không phải 100. Khoảng (10; 100] có 18 dòng với bad rate **33,33%**, tức đúng loại
+rủi ro thật mà đoạn trên nói phải giữ, nhưng chúng vẫn bị gắn cờ. Cả nhóm bị cờ (n = 241) vì
+thế có bad rate 7,05%, gần đúng base rate, do trộn 223 dòng nhiễu (4,93%) với 18 dòng rủi ro
+cao. Bảng ở trên cũng gộp dải "5 – 100" nên che mất chính khoảng này.
+
+Câu hỏi thật là phân biệt lỗi dữ liệu với rủi ro thật mà **không dùng nhãn**, vì dùng nhãn để
+chọn ngưỡng tiền xử lý là đúng thứ bình luận trong `config.py` cấm. Có một chữ ký làm được việc
+đó: utilization thật là thương của hai số tiền nên có nhiều chữ số thập phân, còn một giá trị
+nguyên lớn thì không phải kết quả của phép chia đó.
+
+| dải | n | % giá trị nguyên | bad rate nếu nguyên | bad rate nếu có phần thập phân |
+|---|---|---|---|---|
+| (1; 2] | 2.950 | 0,0% | | 40,10% |
+| (2; 10] | 130 | 1,5% | 0,00% | 28,91% |
+| **(10; 100]** | 18 | **61,1%** | **0,00%** | **85,71%** |
+| >100 | 223 | 99,6% | 4,50% | |
+
+Chữ ký chọn mà không nhìn nhãn, rồi nhãn xác nhận: nhóm 18 dòng tách thành 11 dòng nguyên với
+bad rate 0% và 7 dòng thập phân với bad rate 86%. Cơ chế khớp thêm một đường nữa: 54,55% số dòng
+nguyên trong nhóm đó có thu nhập thiếu hoặc bằng 0, so với 0% ở nhóm thập phân và 20,91% ở toàn
+tập. Chúng chính là những bản ghi hỏng đã bắt được ở `DebtRatio` tại mục 5, cùng một cơ chế mẫu
+số hỏng, chỉ khác cột.
+
+Nên ngưỡng 10 **giữ nguyên**: nâng lên 100 sẽ thả 11 dòng lỗi vào model, còn cái giá của việc
+giữ là gắn cờ nhầm 7 dòng thật, tức 0,005% dữ liệu. Tiêu chí đúng hơn một ngưỡng độ lớn là chính
+chữ ký này, nhưng đổi cách đánh cờ thì phải dựng lại toàn bộ feature và mọi con số từ khối 2 trở
+đi, nên tôi ghi lại làm việc còn treo thay vì đổi giữa chừng.
+
 Bad rate theo dải rộng hơn, dùng khi binning:
 
 | Dải | n | bad rate |
@@ -189,21 +230,41 @@ xem chúng là gì:
 | `MonthlyIncome` missing | 85,00% | 19,82% |
 | `NumberOfOpenCreditLines = 0` | 30,10% | 1,26% |
 
-Đây là hồ sơ thin file: nhiều người 22–23 tuổi, chưa có thu nhập ghi nhận, không nợ, một
-hoặc không có hạn mức nào. Hai người như vậy trùng khớp mười biến vì gần như không có gì
-để phân biệt họ. Là va chạm ngẫu nhiên do dữ liệu thưa, không phải lỗi nhân bản bản ghi.
+Đây là hồ sơ thin file: **27,00% dưới 25 tuổi** so với 2,02% toàn tập, chưa có thu nhập ghi
+nhận, không nợ, một hoặc không có hạn mức nào. Tuổi trung vị của nhóm trùng là 52, đúng bằng
+toàn tập, nên nhìn trung vị thì không thấy gì; phân bố của nó **lưỡng đỉnh** (p25 = 25, p50 = 52,
+p75 = 70) và đỉnh trẻ mới là phần đáng nói. Hai người như vậy trùng khớp mười biến vì gần như
+không có gì để phân biệt họ. Là va chạm ngẫu nhiên do dữ liệu thưa, không phải lỗi nhân bản.
 
-Bằng chứng dứt điểm: 37 nhóm có nhãn mâu thuẫn, cùng hệt mười biến nhưng một người default
-còn người kia không. Bản sao của cùng một hồ sơ thì nhãn phải giống nhau.
+Bằng chứng trực tiếp, và phải nói đúng mức nó chứng minh được bao nhiêu: 37 nhóm có nhãn mâu
+thuẫn, cùng hệt mười biến nhưng một người default còn người kia không. Bản sao của cùng một hồ
+sơ thì nhãn phải giống nhau, nên **37 nhóm đó chắc chắn là người khác nhau**.
+
+Nhưng 37 nhóm chỉ chứa 145 trên 1.000 dòng trùng, nên 317 nhóm còn lại không được chứng minh
+gì. Và nếu tính kỹ hơn thì con số 37 còn nghiêng về hướng ngược: dưới giả thuyết "tất cả là
+người độc lập" với bad rate nhóm trùng 6,00%, số nhóm mâu thuẫn kỳ vọng là **55,1** (sd 6,7),
+nên quan sát 37 nằm ở **z = −2,69**, tức ÍT hơn kỳ vọng một cách có ý nghĩa. Điều đó tương
+thích với việc một phần các nhóm đúng là bản sao thật. Bản đầu gọi đây là "bằng chứng dứt
+điểm"; câu đúng là nó dứt điểm cho 37 nhóm và không nói gì về phần còn lại.
 
 Xoá đi là mất 646 người thật, và mất lệch hẳn về phía nhóm thin file, tức làm model mù
 trước đúng nhóm nó ít dữ liệu nhất. Bad rate nhóm trùng là 6,00% so với 6,69% phần còn
 lại nên giữ hay xoá cũng không đổi kết quả bao nhiêu, nhưng lý do giữ là về nguyên tắc.
 
+**Cái giá của quyết định này, không nêu ở bản đầu:** vì split cắt ngẫu nhiên theo dòng, các
+dòng có vector feature giống hệt nhau bị chia sang hai tập khác nhau. **204 trên 354 nhóm
+trùng nằm ở hơn một split**, và **261 dòng test/oot (0,58%)** có một bản sao feature y hệt
+nằm trong train. Đó là contamination train/holdout thật, do chính quyết định giữ dòng trùng
+tạo ra. Quy mô nhỏ nên tác động lên Gini gần như không đo được, nhưng phần lập luận về rò rỉ
+ở mục 13 chỉ xét rò rỉ theo `id` và theo thứ tự dòng, nên đã bỏ sót đúng kênh này. Cách chặn
+là split theo **nhóm feature** thay vì theo dòng.
+
 ## 9. Cột `id` không leak
 
 `corr(id, target) = 0,0028`. Với n = 150.000 thì sai số chuẩn của hệ số tương quan vào
-khoảng 0,0026, nên con số này nằm trong khoảng một sai số chuẩn.
+khoảng 0,0026, nên con số này bằng **1,08 sai số chuẩn** (bản đầu viết "nằm trong khoảng một
+sai số chuẩn", tức hơi rộng tay). Phép kiểm chắc hơn là chi-square trên 10 khối dưới đây:
+chi2 = 14,93 với 9 bậc tự do, **p = 0,093**, không bác bỏ được tính phẳng.
 
 Bad rate qua 10 khối index liên tiếp: 6,47 · 6,47 · 7,13 · 6,64 · 6,61 · 6,45 · 6,95 ·
 6,51 · 6,55 · 7,07. Phẳng. Bỏ cột được.
@@ -339,9 +400,12 @@ OOT có 1.504 ca dương. Theo công thức Hanley–McNeil với AUC quanh 0,78
 Gini ở cỡ mẫu này là 0,0144, tức khoảng tin cậy 95% rộng ±0,028. Mọi chênh lệch dưới
 khoảng 0,03 Gini trên OOT phải coi là chưa kết luận được.
 
-Một điều phải nhớ khi đọc kết quả về sau: vì đã phân tầng, bad rate ba tập bằng nhau theo
-thiết kế. PSI trên OOT sẽ gần 0 và calibration trên OOT cũng sẽ đẹp, nhưng cả hai là hệ
-quả của cách cắt tập chứ không phải bằng chứng về model.
+Một điều phải nhớ khi đọc kết quả về sau, và phải quy đúng nguyên nhân cho từng thứ. Vì đã
+**phân tầng theo nhãn**, bad rate ba tập bằng nhau theo thiết kế và calibration trên OOT sẽ
+đẹp. PSI thì khác: nó tính trên phân bố feature hoặc điểm chứ không tính trên nhãn, nên PSI
+gần 0 **không** đến từ phân tầng mà đến từ việc cả ba tập được rút ngẫu nhiên từ cùng một tổng
+thể; bỏ phân tầng đi thì PSI vẫn gần 0. Kết luận chung không đổi: cả hai là hệ quả của cách
+cắt tập chứ không phải bằng chứng về model.
 
 ## 14. Việc còn để mở
 

@@ -40,15 +40,24 @@ def _ensure_ln(con: sqlite3.Connection) -> str:
         return "python"
 
 
-def run(db_path=None, sql_path=None) -> pd.DataFrame:
+def execute_sql(sql_path, db_path=None, fetch: str | None = None):
+    """Chay mot file SQL len credit.db, tra ve bang `fetch` neu co yeu cau.
+
+    Tach rieng khoi run() de khoi 4 dung lai duoc cho features_mono.sql: ca hai
+    deu can buoc dang ky LN() truoc khi executescript.
+    """
     db_path = config.DB_PATH if db_path is None else db_path
-    sql_path = (config.SQL_DIR / "features.sql") if sql_path is None else sql_path
     script = sql_path.read_text(encoding="utf-8")
     with sqlite3.connect(db_path) as con:
         print(f"LN(): {_ensure_ln(con)}")
         con.executescript(script)
         con.commit()
-        return pd.read_sql("SELECT * FROM iv_summary", con)
+        return None if fetch is None else pd.read_sql(f"SELECT * FROM {fetch}", con)
+
+
+def run(db_path=None, sql_path=None) -> pd.DataFrame:
+    sql_path = (config.SQL_DIR / "features.sql") if sql_path is None else sql_path
+    return execute_sql(sql_path, db_path, fetch="iv_summary")
 
 
 def check(db_path=None) -> dict:

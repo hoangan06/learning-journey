@@ -6,3 +6,11 @@ HANDOFF_project5.md
 SCOPE.md
 CV_ung_tuyen
 notes
+credit_scoring/project6_credit_scoring/data/
+*.db
+*.sqlite
+*.sqlite3
+SCOPE_project6_credit_scoring.md
+HANDOFF_project6_credit_scoring.md
+HANDOFF_project5_addon.md
+SCOPE_addon.md
