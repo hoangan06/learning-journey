@@ -2,7 +2,7 @@
 
 Hồi quy logistic trên các cột WOE của khối 2, quy đổi ra thang điểm và mã lý do.
 Hệ số ước lượng trên `split = 'train'` (104.999 dòng, 7.018 bad, bad rate 6,6839%).
-Mọi quyết định chọn biến ra đời bằng 5-fold CV **bên trong train**. `test` không tham gia
+Mọi quyết định chọn biến ra đời bằng 5-fold CV bên trong train. `test` không tham gia
 quyết định nào, chỉ để đối chiếu dự đoán đã ghi trước và để báo cáo Gini, calibration, ngưỡng
 cắt. `oot` chưa động tới.
 
@@ -12,7 +12,7 @@ Chạy lại: `python src/scorecard.py`, chi tiết trong `notebooks/03_scorecar
 
 ## 1. Model đầy đủ 10 biến
 
-Model log-odds của **good** (`y = 1 - target`), không regularization (`C=np.inf` với
+Model log-odds của good (`y = 1 - target`), không regularization (`C=np.inf` với
 `newton-cholesky`, `tol=1e-12`; bản đầu dùng `C=1e12` và không hội tụ, xem §7).
 WOE định nghĩa là `ln(pct_good / pct_bad)` nên WOE cao là bin an toàn, và quy ước này cho
 một phép kiểm một dòng: mọi hệ số phải dương. Sai số chuẩn tính tay từ Hessian,
@@ -43,16 +43,16 @@ khác nên model chiết khấu bớt.
 
 Hai chỗ cần dừng lại.
 
-`open_credit_lines` có hệ số **âm** (-0,0462), z = -0,79. Âm trong quy ước này nghĩa là model
+`open_credit_lines` có hệ số âm (-0,0462), z = -0,79. Âm trong quy ước này nghĩa là model
 đảo ngược thứ tự WOE của biến: bin mà phân tích đơn biến gọi là an toàn thì trong bối cảnh
-đa biến lại xấu hơn. Nhưng z nhỏ hơn 1 nên hệ số không phân biệt được với 0, và câu đúng là
-model **không tìm thấy gì** ở biến này sau khi đã có chín biến kia. Cần đo đóng góp biên chứ
-không đọc dấu.
+đa biến lại xấu hơn. Nhưng z nhỏ hơn 1 nên hệ số không phân biệt được với 0, và điều đo được là
+model **không tìm thấy gì** ở biến này sau khi đã có chín biến kia. Cần đo đóng góp biên thay vì
+đọc dấu.
 
 Gini test 0,6985 nằm ngoài khoảng 0,60 đến 0,68 tôi đoán trước khi fit, cao hơn cận
 trên. Đoán sai vì bi quan: tôi trừ hao phần chồng lấn giữa các biến nhiều hơn thực tế. Vẫn
 dưới ngưỡng báo động 0,72 nên không đổi kết luận về leakage. Con số này là kỳ vọng tôi đặt lúc
-mở khối 3 chứ không nằm trong bảng giả thuyết ở `notes_credit_scoring.md` §10, nên nó không có
+mở khối 3, không nằm trong bảng giả thuyết ở `notes_credit_scoring.md` §10, nên nó không có
 cùng sức nặng với hai dự đoán ghi trong `results/iv_report.md`.
 
 ---
@@ -71,9 +71,9 @@ Một ngoại lệ phải nói ra: **điểm cắt bin thì không tính lại t
 `bin_cuts` của khối 2, vốn tính trên toàn bộ train. Điểm cắt cũng là tham số học được nên lập
 luận ở trên áp dụng y nguyên cho chúng. Tôi để vậy vì điểm cắt là phân vị của biến, không nhìn
 vào nhãn, và phân vị rất ổn định khi bỏ đi 20% dữ liệu; nhưng đó là lập luận về mức ảnh hưởng
-chứ không phải lời bào chữa, và phép đo dưới đây lạc quan hơn đúng một chút vì lý do này.
+không phải lời bào chữa, và phép đo dưới đây lạc quan hơn đúng một chút vì lý do này.
 
-Gini CV của model đủ: **0,71513**.
+Gini CV của model đủ: 0,71513.
 
 ### Đóng góp biên của từng biến
 
@@ -109,7 +109,7 @@ biết gì*; đóng góp biên đo *biến đó biết gì mà chín biến kia 
 IV là dùng đại lượng thứ nhất để trả lời câu hỏi thứ hai.
 
 Tổng Gini đơn biến của mười biến là 2,41, gấp hơn ba lần Gini của model đủ. Gini không
-cộng được, và bảng này là cách nhìn thấy điều đó bằng số.
+cộng được.
 
 ### Ép đơn điệu: đo cả hai chiều
 
@@ -121,14 +121,14 @@ cấu trúc.
 
 | biến              | chiều   | mức còn lại   |   Gini CV |        d |      se |         t |   ktc_lo |   ktc_hi | 5 fold cùng dấu   |
 |:------------------|:--------|:--------------|----------:|---------:|--------:|----------:|---------:|---------:|:------------------|
-| revolving_util    | tang    | 1/10          |   0.6638  | -0.05133 | 0.00178 | -28.8042  | -0.05628 | -0.04639 | True              |
-| revolving_util    | giam    | 8/10          |   0.7152  |  6e-05   | 0.0005  |   0.1276  | -0.00133 |  0.00146 | False             |
-| open_credit_lines | tang    | 4/10          |   0.71535 |  0.00022 | 0.00014 |   1.58924 | -0.00016 |  0.0006  | False             |
-| open_credit_lines | giam    | 2/10          |   0.71507 | -6e-05   | 0.00013 |  -0.45649 | -0.00042 |  0.0003  | False             |
-| real_estate_loans | tang    | 2/4           |   0.71272 | -0.00241 | 0.00062 |  -3.91617 | -0.00412 | -0.0007  | True              |
-| real_estate_loans | giam    | 2/4           |   0.71519 |  6e-05   | 0.00058 |   0.10414 | -0.00154 |  0.00166 | False             |
-| debt_ratio_valid  | tang    | 1/10          |   0.70885 | -0.00628 | 0.00141 |  -4.45348 | -0.01019 | -0.00237 | True              |
-| debt_ratio_valid  | giam    | 6/10          |   0.71598 |  0.00085 | 0.00049 |   1.72682 | -0.00052 |  0.00222 | False             |
+| revolving_util    | tang    | 1/10          |   0.66393 | -0.05119 | 0.00181 | -28.30730 | -0.05622 | -0.04617 | True              |
+| revolving_util    | giam    | 8/10          |   0.71518 |  0.00006 | 0.00051 |   0.11050 | -0.00135 |  0.00146 | False             |
+| open_credit_lines | tang    | 4/10          |   0.71534 |  0.00022 | 0.00012 |   1.74115 | -0.00013 |  0.00056 | False             |
+| open_credit_lines | giam    | 2/10          |   0.71583 |  0.00070 | 0.00049 |   1.41953 | -0.00067 |  0.00207 | False             |
+| real_estate_loans | tang    | 2/4           |   0.71273 | -0.00240 | 0.00061 |  -3.90308 | -0.00410 | -0.00069 | True              |
+| real_estate_loans | giam    | 2/4           |   0.71516 |  0.00004 | 0.00058 |   0.06336 | -0.00157 |  0.00164 | False             |
+| debt_ratio_valid  | tang    | 1/10          |   0.70866 | -0.00647 | 0.00138 |  -4.67652 | -0.01031 | -0.00263 | True              |
+| debt_ratio_valid  | giam    | 6/10          |   0.71596 |  0.00083 | 0.00049 |   1.71392 | -0.00052 |  0.00218 | False             |
 
 ### Các phép gộp bin và rủi ro leakage
 
@@ -151,7 +151,7 @@ cấu trúc.
 Mục này viết lại hai lần, vì hai lỗi khác nhau trong cùng một hàm mười dòng.
 Cả hai ghi ở cuối mục.
 
-### Với hai biến nhiều bin, ép sai chiều không phải là ép mà là xoá biến
+### Với hai biến nhiều bin, ép sai chiều tương đương xoá biến
 
 Cột "mức còn lại" ở chiều tăng: `revolving_util` và `debt_ratio_valid` đều còn **1 mức trên
 10**, tức PAVA gộp toàn bộ bin thường thành một hằng số. Đó không còn là một biến. Bảng đóng
@@ -166,10 +166,10 @@ Hai cột gần bằng nhau, qua hai đường đi khác hẳn: một bên PAVA 
 cột khỏi ma trận.
 
 Bản đầu tôi gọi đây là "một phép kiểm chéo tình cờ có được cho cả bộ máy CV". Nói vậy là quá
-tay, và nó vi phạm đúng tiêu chuẩn mà cả khối này dựng lên. Ép sai chiều gộp **toàn bộ** bin
+tay, và nó vi phạm đúng tiêu chuẩn mà cả khối này dựng lên. Ép sai chiều gộp toàn bộ bin
 thường thành một hằng số, mà một cột hằng số thì bị intercept hấp thụ hoàn toàn, nên "ép sai
-chiều" bằng "bỏ cột" **theo cấu tạo** chứ không phải theo dữ liệu. Phép kiểm này gần như không
-có đường để fail. Cái nó thật sự xác nhận chỉ là code chạy đúng như mô tả.
+chiều" bằng "bỏ cột" về mặt toán học, không phải theo dữ liệu. Không có kịch bản nào làm
+phép kiểm này sai được; nó chỉ xác nhận code chạy đúng như mô tả.
 
 (Sau khi sửa lỗi hội tụ ở `fit_logit`, `gini_cv` bỏ hẳn cột hằng số trước khi fit, vì Hessian
 của nó suy biến. Chênh lệch còn lại giữa hai cột là do bin đặc biệt vẫn nằm ngoài phép ép.)
@@ -187,20 +187,20 @@ với 4 bậc tự do):
 | `open_credit_lines` | 2/10 | +0,00070 | [−0,00067; +0,00207] | 0,00067 |
 
 Cột cuối rất dễ lấy nhầm đầu, và tôi đã lấy nhầm một lần. `d = Gini(phương án) − Gini(model
-đủ)`, nên **cái giá là −d**, và cái giá xấu nhất mà dữ liệu còn cho phép là **−ktc_lo**, tức đầu
+đủ)`, nên **cái giá là −d**, và cái giá xấu nhất mà dữ liệu còn cho phép là −ktc_lo, tức đầu
 *trái* của khoảng. Đầu phải là mức được lợi tối đa: với `debt_ratio_valid` đầu phải là 0,0022
 trong khi cái giá xấu nhất thật ra chỉ 0,0005, nên lấy nhầm đầu vừa sai chiều vừa tự làm yếu
 kết luận của mình.
 
-Câu đúng **không** phải "tốn 0,000 Gini", vì dữ liệu không nói được điều đó. Câu đúng là: cái
-giá xấu nhất còn tương thích với dữ liệu ở mức tin cậy 95% là **0,0016 Gini** trên cả bốn biến,
-và **0,0014** nếu chỉ tính hai biến đáng đem đi dùng. Một chỗ phải nói rõ: bốn dòng trên đo
+Không được nói "tốn 0,000 Gini", vì dữ liệu không nói được điều đó. Phát biểu đúng là: cái
+giá xấu nhất còn tương thích với dữ liệu ở mức tin cậy 95% là 0,0016 Gini trên cả bốn biến,
+và 0,0014 nếu chỉ tính hai biến đáng đem đi dùng. Một chỗ phải nói rõ: bốn dòng trên đo
 **từng biến một**, mà max của bốn cái giá riêng lẻ không phải cận trên của cái giá khi ép cả
 bốn cùng lúc. Ép đồng thời thì phải đo đồng thời, và khối 4 đã làm: ép cả chín biến cho
-`d = −0,00024` với cái giá xấu nhất **0,0019**. Kết luận định tính không đổi, nhưng con số
-đúng để trích là 0,0019 chứ không phải 0,0015. Con số đó nhỏ hơn một bậc so với 0,0063
-đến 0,0205 mà khối 2 đo đơn biến, và nhỏ hơn nhiều so với ±0,028 là khoảng tin cậy của chính
-Gini trên tập OOT. Ở quy mô dữ liệu này nó không đo được.
+`d = −0,00019` với cái giá xấu nhất 0,0019. Kết luận định tính không đổi, nhưng con số
+đúng để trích là 0,0019, không phải 0,0015. Con số đó nhỏ hơn một bậc so với 0,0063
+đến 0,0205 mà khối 2 đo đơn biến, và nhỏ hơn nhiều so với ±0,025 là khoảng tin cậy của chính
+Gini ở cỡ mẫu tập giữ riêng. Ở quy mô dữ liệu này nó không đo được.
 
 Cột mức còn lại tách bảng thành hai nhóm rất khác nhau, và đây mới là chỗ có nội dung.
 
@@ -211,8 +211,8 @@ Cột mức còn lại tách bảng thành hai nhóm rất khác nhau, và đây
 Không mất gì, nhưng "đơn điệu 2 mức" không cùng một loại kết quả với "đơn điệu 8 mức".
 
 **`open_credit_lines` thì câu hỏi gần như rỗng.** Bản đơn điệu của nó gộp bin 01 đến 09 thành
-một mức, còn 2 trên 10, và `d` = −0,00006 gần trùng với `d` = +0,00004 của việc **xoá hẳn
-biến**. Nó cũng là biến duy nhất mà chiều giảm **không** phải chiều nghiệp vụ: bin 01 có bad
+một mức, còn 2 trên 10, và `d` = +0,00070 với khoảng tin cậy [−0,00067; +0,00207] chứa 0, tức
+ép chiều nào cũng không mất gì đo được; xoá hẳn biến cũng chỉ cho +0,00006. Nó cũng là biến duy nhất mà chiều giảm không phải chiều nghiệp vụ: bin 01 có bad
 rate 10,77%, cao nhất của biến, nên "rủi ro tăng theo số hạn mức" sai chiều với dữ liệu, và
 đúng vì thế mà bản đơn điệu của nó phải gộp phẳng chín bin đầu.
 
@@ -223,7 +223,7 @@ thân biến cũng không mang gì. Với `real_estate_loans`, chữ U rút đư
 gì, nên hình chữ U không phải thứ mang thông tin; cái mang thông tin là contrast "có từ ba
 khoản bất động sản trở lên hay không".
 
-Ở khối 2, `open_credit_lines` được đo là đáng **0,0176 Gini** khi so đơn biến, ép chiều tăng.
+Ở khối 2, `open_credit_lines` được đo là đáng 0,0176 Gini khi so đơn biến, ép chiều tăng.
 `real_estate_loans` thì bảng CV của khối 2 **không có dòng nào**; tôi chỉ đọc hình chữ U của nó
 từ bảng bad rate, và đó chính là cách đọc mà khối này bác. (Dòng còn thiếu đó đã được bổ sung
 khi rà soát lại, xem `results/iv_report.md` §2: +0,0205 ép chiều tăng, +0,1005 ép chiều giảm.)
@@ -234,10 +234,10 @@ bảng. Model không cần biết một người chỉ có 2 hạn mức, nó đ
 mức đang có.
 
 **Dự đoán 1 đúng một nửa, và nửa sai có lý do rất cụ thể.** Gộp bin 01 của `revolving_util` vào
-bin 02 không làm mất gì (`d` = +0,00011), đúng như tôi đoán. Nhưng nó không làm biến đơn điệu:
+bin 02 không làm mất gì (`d` = +0,00012), đúng như tôi đoán. Nhưng nó không làm biến đơn điệu:
 nhóm gộp có bad rate 1,91%, vẫn cao hơn bin 03 (1,38%).
 
-PAVA chiều giảm thì làm được, và nó cũng gộp bin, chỉ là **gộp 01+02+03** thành một mức có bad
+PAVA chiều giảm thì làm được, và nó cũng gộp bin, chỉ là gộp 01+02+03 thành một mức có bad
 rate 1,73%, thấp hơn bin 04 (1,83%) nên đơn điệu. Tôi đã gộp **thiếu đúng một bin**. Đó là phán
 quyết chính xác cho dự đoán 1, và ai cũng kiểm được ngay trên bảng bad rate: 1,91% so với 1,38%
 thì hỏng, 1,73% so với 1,83% thì xong.
@@ -252,11 +252,11 @@ thì hỏng, 1,73% so với 1,83% thì xong.
 thấp vì tỉ lệ sử dụng hạn mức cao", không kèm ngoại lệ "trừ khi anh dùng quá ít".
 
 Cần nói rõ nó sửa được gì và không sửa được gì. Nó xoá cái móc ở bin 01 của `revolving_util`,
-đúng chỗ tôi không giải thích được với khách hàng. Nó **không** sửa được việc 84,7% hồ sơ bị từ
+đúng chỗ tôi không giải thích được với khách hàng. Nó không sửa được việc 84,7% hồ sơ bị từ
 chối nhận cùng một lý do ở mục 8: nguyên nhân của con số đó là `revolving_util` chi phối model,
-và ép đơn điệu chỉ rút biên độ của biến đó xuống chút ít chứ không đổi bản chất.
+và ép đơn điệu chỉ rút biên độ của biến đó xuống chút ít, không đổi bản chất.
 
-Tôi **không** đổi cách chia bin trong khối này, vì bảng WOE và pipeline SQL của khối 2 đang là
+Tôi không đổi cách chia bin trong khối này, vì bảng WOE và pipeline SQL của khối 2 đang là
 nền cho mọi con số phía dưới, và đổi nền ở cuối khối là cách chắc chắn nhất để một chỗ nào đó
 lệch mà không ai biết. Đây là việc đầu tiên của khối 4.
 
@@ -269,11 +269,11 @@ nguyên bin `3+` ra ngoài. Kết quả in ra là `d` = −0,00015, một con s�
 **Lỗi thứ hai.** Sau khi sửa, hàm tự chọn chiều bằng dấu hiệp phương sai có trọng số. Với
 `real_estate_loans` nó chọn tăng, ra `d` = −0,00241, và tôi kết luận "chữ U sống sót". Chiều là
 một lựa chọn có hậu quả lớn hơn cả bản thân phép ép, mà tôi để nó cho một heuristic không in ra
-đâu cả. `force_monotone` bây giờ **bắt buộc** truyền chiều, không còn chế độ tự đoán.
+đâu cả. `force_monotone` bây giờ bắt buộc truyền chiều, không còn chế độ tự đoán.
 
 Cùng họ với lỗi IV sai 10 lần ở khối 2: phép kiểm chạy trót lọt, in ra con số trông hợp lý,
 không có gì báo rằng nó đang đo một thứ khác với thứ tôi nghĩ. Ba lần rồi, và cả ba lần đều lộ
-ra nhờ đối chiếu chứ không nhờ chạy lại.
+ra nhờ đối chiếu, không nhờ chạy lại.
 
 ### Hai điều phải nói kèm về mặt thống kê
 
@@ -287,12 +287,12 @@ chiều kia chỉ để định giá việc chọn sai. Với `open_credit_lines
 
 **t-test trên k-fold đánh giá thấp phương sai**, vì năm tập fit chồng nhau tới 75% nên các `d`
 không độc lập (Dietterich 1998; Bengio & Grandvalet 2004). Hệ quả là |t| bị thổi lên. Chiều lệch
-này **có lợi** cho các kết luận null ở đây: một phép kiểm vốn dễ bác mà vẫn không bác được thì
+này có lợi cho các kết luận dạng "không đo được" ở đây: một phép kiểm vốn dễ bác mà vẫn không bác được thì
 câu "không đo được" càng chắc. Ngược lại nó làm yếu đúng những khẳng định dương nhỏ, cụ thể là
-`monthly_income` (t = −3,39) và "gộp 3+ vào 2" (t = −3,57). Tôi không lấy hai con số đó làm căn
-cứ quyết định. Chỗ tôi **có** dựa vào một t cùng cỡ là dòng "gộp hết" của `real_estate_loans`
-(t = −3,37) để nói biến này mang thông tin; ở đó tôi có một bằng chứng độc lập không dính CV,
-là hệ số Wald của biến trong model cuối, z = 8,66 trên toàn bộ train.
+`monthly_income` (t = −3,44) và "gộp 3+ vào 2" (t = −3,50). Tôi không lấy hai con số đó làm căn
+cứ quyết định. Chỗ tôi có dựa vào một t cùng cỡ là dòng "gộp hết" của `real_estate_loans`
+(t = −3,34) để nói biến này mang thông tin; ở đó tôi có một bằng chứng độc lập không dính CV,
+là hệ số Wald của biến trong model cuối, z = 8,68 trên toàn bộ train.
 
 ### Quyết định
 
@@ -302,14 +302,14 @@ với 0, và nó là cùng một sự việc nhìn từ góc khác. Nó là hệ
 vụ: giữ biến lại thì bảng điểm sẽ trừ điểm người có ít hạn mức hơn, và tôi không có câu trả lời
 nào đúng cho câu hỏi đó.
 
-`monthly_income` (−0,00016) và `dependents` (−0,00006) cũng gần bằng không nhưng **giữ lại**:
+`monthly_income` (−0,00016) và `dependents` (−0,00006) cũng gần bằng không nhưng giữ lại:
 dấu đúng, đóng góp không âm, và là hai biến bên kinh doanh mong thấy trong một scorecard. Bỏ
 chúng đổi lấy 0,0002 Gini là đổi một câu hỏi khó lấy một con số không đo được.
 
 Khối 2 còn để lại một cảnh báo: chỗ chồng lấn thật nằm ở cặp `debt_ratio_valid` và
 `monthly_income` (31.365 dòng dùng chung thông tin missing), và nếu có hệ số lạ thì nhìn ở đó
 trước. Nửa đúng: `monthly_income` đúng là bị chiết khấu gần hết (hệ số 0,0901, z = 1,67) trong
-khi `debt_ratio_valid` giữ nguyên sức mạnh (0,7969); nhưng chỗ **lật dấu** lại rơi vào một biến
+khi `debt_ratio_valid` giữ nguyên sức mạnh (0,7969); nhưng chỗ lật dấu lại rơi vào một biến
 không nằm trong cảnh báo đó.
 
 ### Đọc bảng gộp bin của `real_estate_loans`
@@ -324,7 +324,7 @@ Bốn dòng `real_estate` phải đọc cùng nhau, vì đọc lẻ thì mâu th
 | gộp hết | một bin | −0,00300 |
 
 Dòng thứ ba nói toàn bộ đóng góp của biến nằm ở contrast `3+` so với phần còn lại. Nhưng dòng
-thứ hai xoá đúng contrast đó mà chỉ mất một nửa, và lý do là nó **không xoá hẳn**: bin gộp
+thứ hai xoá đúng contrast đó mà chỉ mất một nửa, và lý do là nó không xoá hẳn: bin gộp
 gộp 2 với 3+ có WOE +0,065, vẫn nằm dưới bin 1 (+0,260), nên một phiên bản pha loãng của cùng
 contrast sống sót.
 
@@ -335,12 +335,12 @@ một nhánh", chúng đo hậu quả của việc gộp hai bin ngược dấu;
 lời được câu hỏi ban đầu.
 
 Dòng "gộp 0,1,2" và dòng "ép giảm" ở bảng trên cho **đúng cùng một con số** `d` = +0,00004, và
-đó **không phải tình cờ**: cả hai đều rút biến xuống đúng hai mức, mà một cột chỉ có hai mức thì
+đó **có lý do cấu trúc**: cả hai đều rút biến xuống đúng hai mức, mà một cột chỉ có hai mức thì
 mọi cách gán giá trị đều sai khác nhau một phép biến đổi affine, nên logistic fit ra cùng một
 model.
 
 Bản đầu hai con số này lệch nhau 1e-05 và tôi giải thích rằng đó là do hai đường tính WOE khác
-nhau (+0,021 so với +0,044). Giải thích đó **tự mâu thuẫn**: nếu hai cột affine với nhau thì giá
+nhau (+0,021 so với +0,044). Giải thích đó tự mâu thuẫn: nếu hai cột affine với nhau thì giá
 trị WOE khác nhau không thể đổi kết quả fit. Phần dư 1e-05 là nhiễu tối ưu hoá của lỗi hội tụ
 nói ở mục 1, và sau khi sửa `fit_logit` thì nó biến mất hẳn. Một con số dư nhỏ mà có sẵn lời giải thích nghe hợp lý thì rất dễ trôi qua.
 
@@ -356,8 +356,8 @@ fold cùng dấu. 0,18% dữ liệu mà đáng 0,0024 Gini là nhiều, đúng n
 Bỏ hẳn `late_90` mất 0,0269. Bỏ cả ba biến `late_*` làm Gini rơi từ 0,715 xuống 0,590, mất
 0,1246, tức **17% sức mạnh của model nằm ở lịch sử trễ hạn**.
 
-Con số 0,1246 là **cận trên** của thiệt hại nếu hoá ra cửa sổ đo feature chồng lấn cửa sổ
-target, cận trên vì nó bỏ toàn bộ ba biến chứ không chỉ phần chồng lấn. Ngay ở kịch bản xấu
+Con số 0,1246 là cận trên của thiệt hại nếu hoá ra cửa sổ đo feature chồng lấn cửa sổ
+target, cận trên vì nó bỏ toàn bộ ba biến, không chỉ phần chồng lấn. Ngay ở kịch bản xấu
 nhất đó scorecard còn Gini 0,590, vẫn dùng được. Rủi ro leakage ở đây là rủi ro **phóng đại
 thành tích**, không phải rủi ro model rỗng.
 
@@ -382,15 +382,15 @@ Chín biến, chia bin giữ nguyên như khối 2, không gộp bin nào.
 
 | | Gini | KS |
 |---|---|---|
-| train | 0.7165 | 0.5574 |
-| test | 0.6984 | 0.5472 |
+| train | 0.7165 | 0.5576 |
+| test | 0.6984 | 0.5474 |
 
-Mọi hệ số dương, Gini test bằng đúng model 10 biến. Đây là báo cáo chứ không phải căn cứ:
+Mọi hệ số dương, Gini test bằng đúng model 10 biến. Đây là báo cáo, không phải căn cứ:
 quyết định bỏ `open_credit_lines` đã ra đời ở mục 3 bằng CV trong train, và nếu test có nói
-ngược thì tôi vẫn phải giữ quyết định đó rồi ghi lại mâu thuẫn, chứ không được đổi ý theo test.
+ngược thì tôi vẫn phải giữ quyết định đó rồi ghi lại mâu thuẫn, và không được đổi ý theo test.
 
 `monthly_income` có z = 1,67, p ≈ 0,10, không có ý nghĩa ở mức 5%. Có một mâu thuẫn bề
-ngoài đáng nói: CV bảo bỏ nó làm Gini giảm 0,00017 với t = −3,39 (có ý nghĩa), Wald bảo hệ số
+ngoài đáng nói: CV bảo bỏ nó làm Gini giảm 0,00016 với t = −3,44 (có ý nghĩa), Wald bảo hệ số
 không khác 0. Hai phép kiểm hỏi hai câu khác nhau. Wald hỏi hệ số có khác 0 trên một mẫu
 train; CV ghép cặp hỏi việc bỏ biến có làm giảm Gini nhất quán qua các fold, và vì ghép cặp
 nên phát hiện được cả chênh lệch cực nhỏ. Cả hai cùng nói một điều: biến này gần như không có
@@ -409,8 +409,8 @@ score = Offset + Factor · ln(odds)
 Tuyến tính theo log-odds thì "thêm bao nhiêu điểm" mới có nghĩa cố định trên toàn thang: cộng
 cùng một số điểm luôn nhân odds với cùng một hệ số, dù đang ở đầu nào.
 
-Ba tham số quy ước (Siddiqi 2017): **PDO** = 20 điểm làm odds gấp đôi, **base odds** =
-50:1, **base score** = 600. Giải từ hai ràng buộc:
+Ba tham số quy ước (Siddiqi 2017): PDO = 20 điểm làm odds gấp đôi, base odds =
+50:1, base score = 600. Giải từ hai ràng buộc:
 
 ```
 600     = Offset + Factor·ln(50)
@@ -432,7 +432,7 @@ score = Offset + Factor·(b0 + Σ bj·WOEj)
 ```
 
 Việc chia `b0` và `Offset` đều cho n biến là **quy ước cho tiện**, không phải kết quả toán học:
-nó dời điểm qua lại giữa các biến chứ không đổi tổng. Hệ quả khi đọc bảng điểm: so sánh điểm
+nó dời điểm qua lại giữa các biến, không đổi tổng. Hệ quả khi đọc bảng điểm: so sánh điểm
 tuyệt đối giữa hai biến khác nhau là vô nghĩa, chỉ chênh lệch **trong cùng một biến** mới có nghĩa.
 
 ### Biên độ điểm
@@ -449,12 +449,12 @@ tuyệt đối giữa hai biến khác nhau là vô nghĩa, chỉ chênh lệch 
 | dependents        |    60 |    66 |         6 |
 | monthly_income    |    61 |    64 |         3 |
 
-Biên độ là dạng đọc được nhất của hệ số: `revolving_util` chênh 57 điểm giữa bin tốt nhất và
+Biên độ là dạng dễ đọc nhất của hệ số: `revolving_util` chênh 57 điểm giữa bin tốt nhất và
 xấu nhất, tức 2,85 lần PDO, nên riêng biến này đã làm odds chênh 2^2,85 ≈ 7 lần.
 `monthly_income` chênh 3 điểm, gần như không tham gia quyết định.
 
 Tổng điểm chạy từ 385 đến 640. Thang hẹp so với các thang thương mại (FICO 300 đến 850)
-vì nó là **hệ quả** của model chứ không phải thiết kế: biên độ bằng Factor nhân biên độ
+vì nó là hệ quả của model, không phải thiết kế: biên độ bằng Factor nhân biên độ
 log-odds mà chín biến này tạo ra được.
 
 ### Bảng điểm đầy đủ
@@ -578,11 +578,11 @@ Cột "thiếu" là số điểm mất so với bin tốt nhất của chính bi
 
 Hai chi tiết sẽ quay lại ở phần mã lý do.
 
-`revolving_util` bin 01 được 81 điểm, **thiếu 12** so với bin 02. Đó là cái móc từ khối 2, giờ
+`revolving_util` bin 01 được 81 điểm, thiếu 12 so với bin 02. Đó là cái móc từ khối 2, giờ
 có giá cụ thể: 12 điểm là 0,6 PDO, tức odds thấp hơn khoảng 1,5 lần. Người có ít hạn mức
 nhất bị trừ điểm, và bảng điểm nói thẳng ra thay vì giấu trong hệ số.
 
-`monthly_income` bin `X_ZERO` được **điểm cao nhất** của biến, cao hơn cả nhóm thu nhập cao
+`monthly_income` bin `X_ZERO` được điểm cao nhất của biến, cao hơn cả nhóm thu nhập cao
 nhất. Đây là hệ quả trực tiếp của phát hiện ở khối 1 rằng missing mang thông tin ngược trực
 giác. Đúng về thống kê trên bộ này, và là câu hỏi khó đầu tiên bất kỳ ai nhìn bảng điểm cũng
 hỏi. Biên độ cả biến chỉ 3 điểm nên nó không đổi được quyết định nào, nhưng vẫn phải giải
@@ -597,11 +597,11 @@ thích được.
 | điểm chưa làm tròn → log-odds | lệch lớn nhất 6.22e-15 |
 | làm tròn về số nguyên → PD | lệch lớn nhất 2.84 điểm %, trung bình 0.172 điểm % |
 
-Lệch 6e-15 là sai số dấu phẩy động, tức phép quy đổi đúng chính xác chứ không phải xấp
+Lệch 7e-15 là sai số dấu phẩy động, tức phép quy đổi đúng chính xác, không phải xấp
 xỉ. Đáng kiểm vì rất dễ sai dấu hoặc quên chia `b0` cho n, và cái sai đó **không lộ ra ở bất
 kỳ chỉ số xếp hạng nào**: Gini vẫn y nguyên vì thứ tự không đổi, chỉ PD suy ra từ điểm là sai.
 
-Chỗ lệch lớn nhất **không** nằm ở đáy thang như tôi tưởng lúc đầu mà nằm ở giữa, tại 488 điểm,
+Chỗ lệch lớn nhất không nằm ở đáy thang như tôi tưởng lúc đầu mà nằm ở giữa, tại 488 điểm,
 nơi PD model là 52,1% so với 49,2% đọc từ bảng điểm. Lý do là số học: sai số làm tròn cộng dồn tối đa 9 × 0,5 = 4,5 điểm, tức 0,156
 đơn vị log-odds, và `|ΔPD| ≈ p(1−p)·Δ log-odds`, mà `p(1−p)` cực đại ở p = 0,5. Ở hai đầu thang
 cùng một sai số điểm lại cho sai số PD nhỏ: trung bình chỉ 0,05 điểm phần trăm ở nhóm trên 600
@@ -617,7 +617,7 @@ Lệch trái mạnh, đúng hình dạng của một danh mục có bad rate 6,7
 
 ## 7. Điểm có nói đúng odds không
 
-Thang điểm được **định nghĩa** sao cho 600 điểm là odds 50:1 và mỗi 20 điểm gấp đôi odds.
+Thang điểm được định nghĩa sao cho 600 điểm là odds 50:1 và mỗi 20 điểm gấp đôi odds.
 Đó là điều model nói. Câu hỏi khác hẳn là dữ liệu có nói vậy không. Gini 0,6984 nói model
 **xếp hạng** tốt; nó không nói gì về việc con số PD suy ra từ điểm có đúng không.
 
@@ -661,17 +661,17 @@ Trên train PD dự báo trung bình khớp bad rate thực gần như hoàn h�
 bằng chứng gì cả**: hồi quy logistic ước lượng bằng hợp lý cực đại luôn cho trung bình dự báo
 bằng đúng trung bình quan sát trên chính tập fit. Đó là tính chất của phương trình chuẩn tắc.
 
-Chỗ có thông tin là từng decile, và ở đó model sai **có hệ thống**: decile thấp nhất dự báo
-34,44% trong khi thực tế 35,30%, decile cao nhất dự báo 0,85% trong khi thực tế 0,36%. Dự báo
-bị **nén về giữa**, model chưa đủ tự tin ở cả hai đầu. Đọc trên thang điểm: ở 626 điểm model
+Chỗ có thông tin là từng decile, và ở đó model sai có hệ thống: decile thấp nhất dự báo
+34,58% trong khi thực tế 35,44%, decile cao nhất dự báo 0,85% trong khi thực tế 0,36%. Dự báo
+bị nén về giữa, model chưa đủ tự tin ở cả hai đầu. Đọc trên thang điểm: ở 626 điểm model
 bảo odds 122:1 nhưng thực tế 274:1.
 
-Hai điều rút ra. Thang điểm PDO chỉ **đổi nhãn** cho log-odds của model chứ không tự làm nó
-đúng; model lệch thì thang điểm lệch y hệt. Và đây là loại sai **sửa được sau**, bằng một hàm
+Hai điều rút ra. Thang điểm PDO chỉ đổi nhãn cho log-odds của model, không tự làm nó
+đúng; model lệch thì thang điểm lệch y hệt. Và đây là loại sai sửa được sau, bằng một hàm
 đơn điệu áp lên điểm, nên không đụng gì đến Gini; ngược lại thì không, xếp hạng sai thì không
 calibration nào cứu được. Để xử lý ở khối 5 cùng với PSI.
 
-Trên test hình dạng lặp lại gần y hệt, nên đây không phải overfit mà là **dạng hàm**: logistic
+Trên test hình dạng lặp lại gần y hệt, nên đây không phải overfit mà là dạng hàm: logistic
 tuyến tính theo WOE quá trơn so với quan hệ thật ở hai đuôi.
 
 ---
@@ -679,7 +679,7 @@ tuyến tính theo WOE quá trơn so với quan hệ thật ở hai đuôi.
 ## 8. Mã lý do
 
 ECOA Regulation B (12 CFR 1002.9) buộc bên cho vay từ chối hồ sơ phải nêu **các lý do chính**,
-cụ thể, chứ không được nói "hệ thống chấm điểm từ chối". Tháng 5/2022 CFPB ra Circular 2022-03
+cụ thể, và không được nói "hệ thống chấm điểm từ chối". Tháng 5/2022 CFPB ra Circular 2022-03
 nói rõ yêu cầu này không được miễn trừ vì model quá phức tạp để giải thích. Đây là lý do thực
 sự để làm scorecard thay vì bắn thẳng XGBoost vào bài toán.
 
@@ -694,11 +694,11 @@ chưa chắc là thứ thực sự đẩy họ qua ngưỡng.
 
 ### Năm hồ sơ điểm thấp nhất của tập test
 
-- **#104643**, 409 điểm, PD 93,6%, nhãn thực tế **xấu**: `revolving_util` bin 10 (−57 điểm); `late_90` bin 3-4 (−52 điểm); `late_30_59` bin 3-4 (−41 điểm)
-- **#29326**, 410 điểm, PD 93,9%, nhãn thực tế **xấu**: `revolving_util` bin 10 (−57 điểm); `late_30_59` bin 9_SENTINEL (−52 điểm); `late_90` bin 9_SENTINEL (−48 điểm)
-- **#138826**, 413 điểm, PD 92,4%, nhãn thực tế **xấu**: `revolving_util` bin 10 (−57 điểm); `late_30_59` bin 5+ (−46 điểm); `late_90` bin 2 (−44 điểm)
-- **#42082**, 413 điểm, PD 92,6%, nhãn thực tế **xấu**: `revolving_util` bin 10 (−57 điểm); `late_90` bin 5+ (−52 điểm); `late_30_59` bin 3-4 (−41 điểm)
-- **#37025**, 415 điểm, PD 92,5%, nhãn thực tế **xấu**: `revolving_util` bin 10 (−57 điểm); `late_30_59` bin 9_SENTINEL (−52 điểm); `late_90` bin 9_SENTINEL (−48 điểm)
+- **#104643**, 409 điểm, PD 93,6%, nhãn thực tế xấu: `revolving_util` bin 10 (−57 điểm); `late_90` bin 3-4 (−52 điểm); `late_30_59` bin 3-4 (−41 điểm)
+- **#29326**, 410 điểm, PD 93,9%, nhãn thực tế xấu: `revolving_util` bin 10 (−57 điểm); `late_30_59` bin 9_SENTINEL (−52 điểm); `late_90` bin 9_SENTINEL (−48 điểm)
+- **#138826**, 413 điểm, PD 92,4%, nhãn thực tế xấu: `revolving_util` bin 10 (−57 điểm); `late_30_59` bin 5+ (−46 điểm); `late_90` bin 2 (−44 điểm)
+- **#42082**, 413 điểm, PD 92,6%, nhãn thực tế xấu: `revolving_util` bin 10 (−57 điểm); `late_90` bin 5+ (−52 điểm); `late_30_59` bin 3-4 (−41 điểm)
+- **#37025**, 415 điểm, PD 92,5%, nhãn thực tế xấu: `revolving_util` bin 10 (−57 điểm); `late_30_59` bin 9_SENTINEL (−52 điểm); `late_90` bin 9_SENTINEL (−48 điểm)
 
 ### Lý do số 1 tập trung ở đâu
 
@@ -715,13 +715,13 @@ Ngưỡng 580, tập test: 8.291 hồ sơ bị từ chối (36,8%).
 
 84,7% hồ sơ bị từ chối nhận cùng một lý do số 1. Về kỹ thuật thì đúng,
 `revolving_util` có biên độ 57 điểm nên hầu như luôn thắng. Về mục đích của Regulation B thì
-đây là **vấn đề**: một thông báo từ chối mà 5 trên 6 người nhận nội dung giống hệt nhau thì
+đây là vấn đề: một thông báo từ chối mà 5 trên 6 người nhận nội dung giống hệt nhau thì
 không giúp ai biết mình cần sửa gì.
 
-Không phải lỗi cài đặt mà là hệ quả của việc một biến chi phối model. Siddiqi (2017) chương về
-triển khai đưa ra hai hướng: ghép biến thành các nhóm lý do rồi buộc ba mã phải đến từ ba nhóm
-khác nhau, hoặc đổi mốc so sánh từ điểm tối đa sang điểm của một hồ sơ tham chiếu ở giữa quần
-thể. Tôi **chưa làm** cái nào, vì chọn giữa chúng là quyết định của bên nghiệp vụ chứ không
+Đây là hệ quả của việc một biến chi phối model, không phải một lỗi cài đặt. Siddiqi (2017)
+chương về triển khai đưa ra hai hướng: ghép biến thành các nhóm lý do rồi buộc ba mã phải đến
+từ ba nhóm khác nhau, hoặc đổi mốc so sánh từ điểm tối đa sang điểm của một hồ sơ tham chiếu ở
+giữa quần thể. Tôi chưa làm cái nào, vì chọn giữa chúng là quyết định của bên nghiệp vụ, không
 phải của model, và ghi lại đây làm giới hạn đã biết.
 
 ---
@@ -741,14 +741,14 @@ Model cho điểm; ngưỡng cắt là quyết định kinh doanh. Bảng tính 
 |      600 |     41.35 |                     0.97 |                      10.71 |            94.02 |
 |      610 |     26.24 |                     0.76 |                       8.79 |            97.01 |
 
-Ngưỡng 580 duyệt 63,0%, bad rate nhóm duyệt còn 1,62% so với 6,68% nếu duyệt hết, bắt được
-84,7% số ca xấu. Ngưỡng 600 đẩy bad rate xuống 0,97% nhưng chỉ còn duyệt 41,3%.
+Ngưỡng 580 duyệt 63,2%, bad rate nhóm duyệt còn 1,62% so với 6,68% nếu duyệt hết, bắt được
+84,7% số ca xấu. Ngưỡng 600 đẩy bad rate xuống 0,97% nhưng chỉ còn duyệt 41,4%.
 
-Cột `bad trong nhóm từ chối %` hay bị bỏ quên. Ở ngưỡng 580, nhóm bị từ chối có bad rate 15,32%, nghĩa là **gần
+Cột `bad trong nhóm từ chối %` hay bị bỏ quên. Ở ngưỡng 580, nhóm bị từ chối có bad rate 15,37%, nghĩa là **gần
 85% số người bị từ chối lẽ ra vẫn trả nợ bình thường**. Đó là cái giá của việc cắt: mỗi ca xấu
 chặn được đi kèm khoảng năm hồ sơ tốt bị đuổi. Không ngưỡng nào làm tỉ lệ đó nhỏ đi mà không
 kéo bad rate của nhóm duyệt lên. Chọn ngưỡng là đặt giá cho hai loại sai này, và cái giá đó
-đến từ biên lợi nhuận và tổn thất khi vỡ nợ chứ không từ dữ liệu.
+đến từ biên lợi nhuận và tổn thất khi vỡ nợ, không từ dữ liệu.
 
 Một cảnh báo về chính bảng này: nó tính trên **những người đã được duyệt trong quá khứ**, vì
 bộ dữ liệu chỉ có nhóm đó. Áp lên dòng hồ sơ thật, nơi có cả người trước đây bị từ chối, tỉ lệ
@@ -778,10 +778,10 @@ không có hồ sơ bị từ chối.
   được tương tác nào mà mô hình cộng tính bỏ sót. Không biến nào trong bộ này còn hình dạng
   **phi đơn điệu** có giá trị sau khi kiểm đa biến (bậc thang WOE vẫn là phi tuyến, và toàn bộ
   sức mạnh của scorecard nằm ở đó, nên đừng lẫn hai chữ này). Nếu XGBoost vượt scorecard đáng
-  kể thì phần vượt phải đến từ một trong ba chỗ: **tương tác giữa các biến**, **chỗ cắt bin**
+  kể thì phần vượt phải đến từ một trong ba chỗ: **tương tác giữa các biến**, chỗ cắt bin
   mịn hơn hoặc khác đi (điểm cắt lấy nguyên `NTILE(10)` của khối 2, khối này chưa thử cắt khác),
   hoặc độ cong phi đơn điệu mà CV của tôi không phát hiện được. Ghi lại trước khi chạy, và ghi
-  cả ba chứ không chỉ một, vì một dự đoán loại trừ thiếu thì kiểu gì cũng đúng.
+  cả ba, không chỉ một, vì một dự đoán loại trừ thiếu thì kiểu gì cũng đúng.
 - Khối 5: calibration (Platt / isotonic), PSI/CSI, và tập OOT.
 
 ---

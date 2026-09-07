@@ -25,7 +25,7 @@ Chạy lại: `python src/build_features.py`
 Bốn biến vượt ngưỡng 0,5. Ngưỡng đó sinh ra cho application scorecard, nơi feature chủ yếu
 là nhân khẩu học và bureau tổng hợp. Bộ dữ liệu này là behavioral, feature là hành vi trả nợ
 thật của chính khách, nên hành vi quá khứ dự báo hành vi tương lai rất mạnh là chuyện bình
-thường chứ không phải dấu hiệu lỗi.
+thường, không phải dấu hiệu lỗi.
 
 Riêng `late_90` vẫn đáng soi kỹ nhất vì nó đo **đúng cùng một sự kiện** với target, chỉ khác
 cửa sổ thời gian: feature đếm số lần 90+ DPD trong 2 năm trước, target đánh dấu 90+ DPD
@@ -35,7 +35,7 @@ hưởng ở bước đánh giá thay vì giả định.
 
 ## 2. Cách chia bin
 
-Biến liên tục lấy điểm cắt từ `NTILE(10)` **trên train**, rồi khử trùng: dùng cận trên của
+Biến liên tục lấy điểm cắt từ `NTILE(10)` trên train, rồi khử trùng: dùng cận trên của
 từng nhóm NTILE làm điểm cắt và `DISTINCT` chúng, để mọi dòng có cùng giá trị luôn rơi vào
 cùng một bin. Không làm bước này thì `NTILE` cắt ngang giữa các giá trị bằng nhau, đúng lỗi
 đã ghi ở mục 10 của `data_profile.md`.
@@ -52,7 +52,7 @@ Biến rời rạc và mọi giá trị đặc biệt (missing, zero, sentinel, 
 
 ### Có ép đơn điệu không
 
-Không. Quyết định dựa trên 5-fold cross-validation **bên trong train**, model một biến, so sánh
+Không. Quyết định dựa trên 5-fold cross-validation bên trong train, model một biến, so sánh
 theo cặp trên cùng fold, `d = Gini(giữ nguyên hình) − Gini(ép đơn điệu)`:
 
 | biến | chiều ép | d trung bình | SE | t | KTC 95% của d | 5 fold cùng dấu |
@@ -71,12 +71,21 @@ và những con số đó **không tái lập được** bằng code hiện tạ
 được sinh ra bởi một phiên bản `cv_check.py` trước hai lần sửa lỗi ở khối 3, và tôi không khôi
 phục được phiên bản đó để nói chính xác lỗi nào gây ra chênh lệch. Bài học ghi lại vì nó tốn
 của tôi nhiều nhất trong cả dự án: **một bảng số trong báo cáo phải sinh ra từ code đang nằm
-trong repo, không phải từ một lần chạy trong quá khứ.** Từ khối 3 trở đi mọi bảng đều được đối
-chiếu lại với output notebook trước khi commit; bảng này thì không, và nó lọt.
+trong repo, không phải từ một lần chạy trong quá khứ.** Bảng này lọt vì chưa bao giờ được chạy
+lại.
 
-Hai biến hình chữ U có **hai** dòng vì chiều ép không hiển nhiên, và đó là điểm chính: ép sai
+Bài học đó chưa được áp đủ ngay. Khi rà lại lần cuối trước khi chốt dự án, tôi phát hiện **toàn
+bộ markdown của notebook 03 vẫn ghi các con số trước khi sửa lỗi hội tụ `fit_logit`**, dù chính
+các cell code của nó đã chạy lại: hệ số, t, khoảng tin cậy, bảng decile và cả một câu chốt
+("trùng nhau tới chữ số thứ tư") không còn đúng với output nằm ngay bên dưới. Phép quét số tự
+động tôi dựng ra để chặn đúng chuyện này chỉ mới được chạy cho khối 4 và khối 5. Nó đã được chạy
+cho khối 3 và mọi chênh lệch đã sửa; khối 1 và khối 2 thì phần lớn bảng sinh từ truy vấn SQL
+trực tiếp thay vì từ output notebook, nên phép quét đó không áp được và nguồn của chúng ghi ở
+đầu mỗi file.
+
+Hai biến hình chữ U có hai dòng vì chiều ép không hiển nhiên, và đó là điểm chính: ép sai
 chiều tốn gấp 6 đến 7 lần ép đúng chiều. Với `open_credit_lines` ép chiều giảm còn đưa Gini
-đơn biến xuống **−0,0032**, tức phá huỷ hẳn biến. Bản đầu của bảng này ghi một con số cho
+đơn biến xuống −0,0032, tức phá huỷ hẳn biến. Bản đầu của bảng này ghi một con số cho
 `open_credit_lines` mà không nói chiều nào, và thiếu hẳn `real_estate_loans` là biến chữ U mạnh
 nhất, trong khi kết luận ngay dưới lại phủ lên cả bốn biến.
 
@@ -85,16 +94,15 @@ Bốn biến có quan hệ không đơn điệu với target, nhưng **không c�
 
 | biến | bad rate theo bin | hình |
 |---|---|---|
-| `open_credit_lines` | 10,77 · 6,49 · 6,26 · 5,55 · **5,27** · 5,88 · 6,12 · 5,96 · 6,33 · 6,70 | **chữ U thật**, đáy ở bin 5, nhánh trái sâu |
-| `real_estate_loans` | 8,33 · **5,23** · 5,60 · 8,46 | **chữ U thật**, hai đầu cao gần bằng nhau |
-| `revolving_util` | 2,55 · **1,27** · 1,38 · 1,83 · 2,42 · 3,42 · 5,27 · 8,64 · 16,47 · 23,57 | **đơn điệu tăng, có một cái móc ở bin đầu** |
-| `debt_ratio_valid` | **4,91** · 6,95 · 6,49 · 6,02 · 5,01 · 5,43 · 6,30 · 7,58 · 9,41 · 11,62 | **tăng dần, nửa dưới dao động**; bin thấp nhất là bin an toàn nhất |
+| `open_credit_lines` | 10,77 · 6,49 · 6,26 · 5,55 · 5,27 · 5,88 · 6,12 · 5,96 · 6,33 · 6,70 | chữ U thật, đáy ở bin 5, nhánh trái sâu |
+| `real_estate_loans` | 8,33 · 5,23 · 5,60 · 8,46 | chữ U thật, hai đầu cao gần bằng nhau |
+| `revolving_util` | 2,55 · 1,27 · 1,38 · 1,83 · 2,42 · 3,42 · 5,27 · 8,64 · 16,47 · 23,57 | **đơn điệu tăng, có một cái móc ở bin đầu** |
+| `debt_ratio_valid` | 4,91 · 6,95 · 6,49 · 6,02 · 5,01 · 5,43 · 6,30 · 7,58 · 9,41 · 11,62 | **tăng dần, nửa dưới dao động**; bin thấp nhất là bin an toàn nhất |
 
 Chỉ hai biến đầu là chữ U. `revolving_util` tăng đơn điệu từ bin 2 đến bin 10, bad rate đi từ
 1,27% lên 23,57%, và chỉ có một cái móc ở bin 1 (2,55% so với 1,27%). `debt_ratio_valid` thì
-không phải chữ U chút nào: bin 1 có bad rate **thấp nhất bảng**, tức đầu thấp của biến là đầu
-an toàn chứ không phải một đầu rủi ro; cái không đơn điệu ở đây là một dao động trong nửa dưới,
-không phải hai nhánh.
+không phải chữ U chút nào: bin 1 có bad rate thấp nhất bảng, tức đầu thấp của biến là đầu an
+toàn nhất; cái không đơn điệu ở đây chỉ là một dao động trong nửa dưới của thang.
 
 Để tách gai thật khỏi nhiễu lấy mẫu, tôi so từng cặp bin kề nhau bằng kiểm định z hai tỉ lệ,
 `z = (p2 − p1) / sqrt(p1(1−p1)/n1 + p2(1−p2)/n2)`. Cái móc ở bin 1 của `revolving_util` cho
@@ -103,7 +111,7 @@ dùng quá tay. Thứ nhất, tôi chạy 45 phép so sánh mà không hiệu ch
 quả quanh |z| ≈ 2 có thể là may rủi (Benjamini & Hochberg 1995). Thứ hai, mọi phép so mà một
 đầu là "bin có bad rate thấp nhất" đều thiên lệch, vì cực tiểu của mười ước lượng nhiễu nằm
 thấp hơn cực tiểu thật một cách có hệ thống (Berk và cộng sự 2013); tôi đã bỏ các con số dạng
-đó khỏi báo cáo. Thứ ba, cái **không** phải vấn đề: ranh giới bin lấy từ phân vị của biến, không
+đó khỏi báo cáo. Thứ ba, cái không phải vấn đề: ranh giới bin lấy từ phân vị của biến, không
 nhìn vào nhãn, nên bản thân các bin không bị chọn theo target.
 
 Vì vậy z ở đây chỉ là sàng lọc mô tả. Căn cứ để quyết định là bảng CV bên dưới, vì nó đo trực
@@ -143,9 +151,9 @@ Một bên là ít tài sản, bên kia là nhà đầu tư dùng đòn bẩy.
 0 hạn mức, tức đây là những người có lịch sử tín dụng đầy đủ. Khác biệt thật so với bin 02 nằm
 ở tiền sử trễ hạn, 12,4% so với 8,6%. Cách đọc hợp lý hơn là utilization gần 0 gộp hai nhóm rất
 khác nhau: người trả hết nợ mỗi tháng, và người đã bị cắt hoặc đóng hạn mức. Nhưng đây vẫn là
-suy đoán, dữ liệu chỉ cho thấy tương quan với tiền sử trễ hạn chứ không cho thấy nguyên nhân.
+suy đoán, dữ liệu chỉ cho thấy tương quan với tiền sử trễ hạn, không cho thấy nguyên nhân.
 
-`debt_ratio_valid` bin thấp nhất là nhóm **an toàn nhất** chứ không phải một đầu rủi ro: chỉ
+`debt_ratio_valid` bin thấp nhất là nhóm an toàn nhất của cả biến: chỉ
 11,7% từng trễ hạn so với 19,6% ở giữa, tuổi trung vị 60, utilization 0,029. Không có gì cần
 giải thích ở đầu này.
 
@@ -155,15 +163,15 @@ Không phải vì kể được câu chuyện. Với `revolving_util` tôi khôn
 `debt_ratio_valid` thì hình dạng còn khác cả cái tôi tưởng.
 
 Lý do là kết quả CV ở bảng trên: giữ nguyên hình cho Gini cao hơn ở mọi biến chữ U, cả năm fold
-cùng dấu. Đọc `d` chứ không đọc `t`: `t` của phép so cặp 5 fold chỉ có 4 bậc tự do, và đổi seed
+cùng dấu. Đọc `d`, đừng đọc `t`: `t` của phép so cặp 5 fold chỉ có 4 bậc tự do, và đổi seed
 thì nó chạy từ 2,6 đến 6,3 trong khi `d` gần như đứng yên. Ở đây `d` nằm trong khoảng 0,006 đến
 0,021 tuỳ biến, và cả năm fold cùng dấu ở mọi biến trừ `monthly_income`. Đó là bằng chứng thực nghiệm, không phụ thuộc vào việc có diễn giải được hay
-không. Trong tài liệu và khi trình bày phải nói đúng như vậy, chứ không mượn một câu chuyện
+không. Trong tài liệu và khi trình bày phải nói đúng như vậy, đừng mượn một câu chuyện
 nghiệp vụ chưa kiểm chứng để biện minh cho một quyết định đã đo được.
 
 Chỗ này có một cái giá thật ở bước triển khai. Với biến đơn điệu, mỗi biến ứng với một chiều
 lý do khi từ chối hồ sơ. Với chữ U, cùng một biến cần hai mã lý do khác nhau tuỳ khách nằm ở
-nhánh nào, nên mã lý do phải gắn vào **bin** thay vì vào **biến**. Làm được, nhưng là thêm một
+nhánh nào, nên mã lý do phải gắn vào bin thay vì vào biến. Làm được, nhưng là thêm một
 tầng phải tài liệu hoá và thẩm định. Riêng cái móc ở bin 01 của `revolving_util` thì hiện chưa
 có lý do nào nói được với khách hàng.
 
@@ -179,7 +187,7 @@ có lý do nào nói được với khách hàng.
 1. Trong model đa biến, gộp bin 01 của `revolving_util` vào bin 02 sẽ làm Gini giảm **dưới
    0,005**, vì nguyên nhân của cái móc đó (tiền sử trễ hạn) đã nằm sẵn trong ba biến `late_*`.
    Nếu đúng thì gộp, và vấn đề mã lý do biến mất mà không mất gì.
-2. Chữ U của `open_credit_lines` và `real_estate_loans` **sống sót** trong model đa biến, vì
+2. Chữ U của `open_credit_lines` và `real_estate_loans` sống sót trong model đa biến, vì
    cơ chế của chúng (thu nhập, mức độ bị hạn chế tín dụng, đòn bẩy bất động sản) không nằm sẵn
    trong biến nào khác.
 
@@ -200,17 +208,17 @@ lech IV lon nhat : 0,0000
 
 ### Một lỗi phép kiểm tự bắt được
 
-Bản pandas đầu tiên tính tổng good/bad từ bảng **long** thay vì bảng gốc. Bảng long có 10 dòng
+Bản pandas đầu tiên tính tổng good/bad từ bảng long thay vì bảng gốc. Bảng long có 10 dòng
 cho mỗi dòng gốc, một dòng mỗi biến, nên tổng bị gấp 10 lần và `pct_good`, `pct_bad` đều bị
 chia 10.
 
-Vì `WOE = ln(pct_good / pct_bad)` là một **tỉ số**, sai số ở mẫu số chung triệt tiêu hoàn toàn:
-WOE vẫn khớp tới 4,9e-07. Nhưng `IV = Σ(pct_good − pct_bad)·WOE` dùng **hiệu**, nên IV sai
+Vì `WOE = ln(pct_good / pct_bad)` là một tỉ số, sai số ở mẫu số chung triệt tiêu hoàn toàn:
+WOE vẫn khớp tới 4,9e-07. Nhưng `IV = Σ(pct_good − pct_bad)·WOE` dùng hiệu, nên IV sai
 đúng 10 lần ở cả mười biến.
 
-Điều đáng ghi lại không phải bản thân lỗi mà là chuyện WOE khớp hoàn hảo **không** chứng minh
-được IV đúng. Một phép kiểm không thể fail ở đại lượng mình cần kiểm thì không phải phép kiểm,
-và ở đây chỉ có việc so IV riêng ra mới lộ.
+Điều đáng ghi lại là chuyện WOE khớp hoàn hảo không chứng minh được IV đúng. Một phép kiểm
+không thể fail ở đại lượng mình cần kiểm thì không phải phép kiểm, và ở đây chỉ có việc so IV
+riêng ra mới lộ.
 
 ## 4. Kiểm tra tính toàn vẹn
 
@@ -220,8 +228,8 @@ row_bins              : 1.499.990 dong (= 149.999 x 10 bien)
 dong co WOE = NULL    : 0
 ```
 
-Con số cuối là phép kiểm quan trọng nhất. Bước 6 của `features.sql` dùng `LEFT JOIN` chứ
-không `INNER JOIN` cố ý: nếu một bin xuất hiện ở test hoặc OOT mà train chưa từng thấy thì
+Con số cuối là phép kiểm quan trọng nhất. Bước 6 của `features.sql` cố ý dùng `LEFT JOIN` thay cho
+`INNER JOIN`: nếu một bin xuất hiện ở test hoặc OOT mà train chưa từng thấy thì
 WOE sẽ là NULL và lộ ra ngay, thay vì dòng đó biến mất khỏi kết quả trong im lặng.
 
 ## 5. Đa cộng tuyến
@@ -369,6 +377,31 @@ là chỗ cần nhìn lại nếu hệ số hồi quy có dấu lạ ở bước
 | 09            | 10482 |   8756 |  1726 |    9.983 |       16.466 | 0.089364 | 0.245939 | -1.01236  |  0.15851  |
 | 10            | 10482 |   8011 |  2471 |    9.983 |       23.574 | 0.081761 | 0.352095 | -1.4601   |  0.394715 |
 | X_IMPLAUSIBLE |   177 |    163 |    14 |    0.169 |        7.91  | 0.001664 | 0.001995 | -0.181602 |  6e-05    |
+
+---
+
+## 7. Cách viết SQL này scale tới đâu
+
+Câu hỏi đầu tiên một người làm dữ liệu sẽ hỏi khi nhìn pipeline này, nên trả lời sẵn ở đây.
+
+Pipeline dựng ở long format: mỗi hồ sơ thành mười dòng, một dòng mỗi biến. `row_values` và
+`row_bins` vì thế mỗi bảng 1.499.990 dòng, và đó là lý do `credit.db` nặng 305 MiB cho một file CSV
+7 MiB. Đổi lại, toàn bộ phép tính WOE thành đúng một `GROUP BY` chạy chung cho mọi biến thay vì
+mười câu lệnh riêng, và bảng tra WOE là một đối tượng nhìn được, không phải một biến trong bộ
+nhớ Python.
+
+Chỗ tốn nhất là mục 3, bước gán bin. Nó `LEFT JOIN` 1,5 triệu dòng với bảng `bin_cuts` rồi
+`GROUP BY id, variable` để đếm xem giá trị vượt qua mấy điểm cắt. Cách này ngắn và chạy được trên
+SQLite trần, nhưng nó nở bảng trung gian lên gấp số điểm cắt trước khi gộp lại. Ở 150.000 hồ sơ thì
+cả pipeline chạy trong vài giây nên không đáng đổi; ở quy mô hàng chục triệu dòng thì đây là chỗ
+phải viết lại đầu tiên, theo một trong hai hướng: sinh sẵn một biểu thức `CASE` cho từng biến từ
+`bin_cuts` để gán bin trong một lượt quét không cần join, hoặc trên một DB thật thì dùng
+`LATERAL`/scalar subquery. Hai bảng long format cũng nên là view thay vì bảng vật lý khi dữ liệu
+lớn.
+
+Hai thứ không đổi khi scale, và đó mới là phần đáng giữ: nguyên tắc mọi tham số học được chỉ
+tính trên `split = 'train'`, và việc `LEFT JOIN` bảng tra để bin lạ lộ ra thành `NULL` thay vì bị
+điền một giá trị trung tính.
 
 ---
 
