@@ -1,9 +1,10 @@
 # Chia bin đơn điệu và đối chiếu scorecard với XGBoost
 
 Kết quả khối 4. Mọi con số dưới đây lấy từ output đã lưu trong
-`notebooks/04_monotone_xgboost.ipynb`, trừ ba nhóm được ghi rõ nguồn tại chỗ: hai chỉ số train KS
+`notebooks/04_monotone_xgboost.ipynb`, trừ bốn nhóm được ghi rõ nguồn tại chỗ: hai chỉ số train KS
 lấy từ `python src/scorecard.py` và `python src/scorecard.py --mono`; phép chẩn đoán early
-stopping và phép kiểm hội tụ của cây `depth=1` chạy ngoài notebook, trên một máy.
+stopping và phép kiểm hội tụ của cây `depth=1` chạy ngoài notebook, trên một máy; và các con số
+**trước khi sửa** của bảng ở mục 4, giữ lại để đối chiếu chứ không sinh ra được từ code hiện tại.
 
 Dựng lại từ đầu: `python src/monotone_bins.py` (tạo `bin_map` và bốn bảng `*_mono`), rồi
 `python src/scorecard.py --mono`, rồi chạy notebook 04. Cần thêm `pip install xgboost`.
@@ -301,16 +302,27 @@ cũng phải rút.
 
 ### Phép kiểm chỉ đổi một thứ
 
-Cùng bộ bin của khối 2, cùng logistic, chỉ đổi **số tham số** dành cho biến đó:
+Cùng bộ bin của khối 2, cùng logistic, cùng bộ fold, chỉ đổi **số tham số** dành cho biến đó.
+
+Bảng này ban đầu sinh ra từ một cell gọi `LogisticRegression(C=1e12, max_iter=2000)`, tức đúng
+cấu hình không hội tụ đã làm hỏng `fit_logit` ở khối 3. Đo lại bằng solver đã sửa: dòng chín
+dummy gần như không đổi (+0,00207 thành +0,00206) nhưng t tăng từ 3,88 lên 4,07, còn dòng một hệ
+số tụt từ +0,00024 (t = 2,36) xuống +0,00016 (t = 1,82). Kết luận không đổi, nhưng bản không hội
+tụ đã đẩy dòng một hệ số lên sát mức phân biệt được với 0, tức lệch về phía làm kết luận yếu đi.
 
 | cách đưa `open_credit_lines` vào model | đóng góp | t |
 |---|---|---|
 | biến gốc, cộng tính tự chọn hình dạng (`depth=1`) | +0,0029 | 3,48 |
 | cột WOE khối 2, cộng tính (`depth=1`) | +0,0023 | 4,37 |
-| cột WOE khối 2, logistic với **9 cột dummy** | +0,0021 | 3,88 |
-| cột WOE khối 2, logistic với **1 hệ số** (scorecard khối 3) | **+0,00004** | 1,14 |
+| cột WOE khối 2, logistic với **9 cột dummy** | +0,0021 | 4,07 |
+| cột WOE khối 2, logistic với **1 hệ số**, cùng phép đo với dòng trên | **+0,00016** | 1,82 |
+| cột WOE khối 2, logistic với **1 hệ số**, đo bằng đóng góp biên ở khối 3 | **+0,00004** | 1,14 |
 
-Ba dòng đầu nói cùng một chuyện qua ba đường khác nhau; dòng cuối rơi xuống gần 0. Thủ phạm
+Hai dòng cuối là cùng một mô hình đo theo hai đường: dòng áp chót dùng đúng baseline và đúng bộ
+fold của dòng chín dummy nên nó mới là phép so chỉ đổi một thứ, dòng chót là con số khối 3 đã
+dùng để loại biến. Hai đường cho cùng một kết luận, và đó là điều đáng ghi.
+
+Ba dòng đầu nói cùng một chuyện qua ba đường khác nhau; hai dòng cuối rơi xuống gần 0. Thủ phạm
 **không phải cách chia bin và không phải thiếu tương tác**, mà là **ràng buộc một hệ số cho cả
 cột WOE**, tức chính dạng hàm của scorecard cổ điển. Cột WOE của biến này có hình chữ U, mà khối
 3 đã chứng minh nhánh trái chỉ là bóng của `revolving_util`; nhân cả cột với một hằng số thì phần

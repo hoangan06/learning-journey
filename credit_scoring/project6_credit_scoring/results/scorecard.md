@@ -12,7 +12,8 @@ Chạy lại: `python src/scorecard.py`, chi tiết trong `notebooks/03_scorecar
 
 ## 1. Model đầy đủ 10 biến
 
-Model log-odds của **good** (`y = 1 - target`), không regularization (`C=1e12`).
+Model log-odds của **good** (`y = 1 - target`), không regularization (`C=np.inf` với
+`newton-cholesky`, `tol=1e-12`; bản đầu dùng `C=1e12` và không hội tụ, xem §7).
 WOE định nghĩa là `ln(pct_good / pct_bad)` nên WOE cao là bin an toàn, và quy ước này cho
 một phép kiểm một dòng: mọi hệ số phải dương. Sai số chuẩn tính tay từ Hessian,
 `cov = (Xᵀ W X)⁻¹` với `W = diag(p(1−p))`, vì scikit-learn không trả về.
