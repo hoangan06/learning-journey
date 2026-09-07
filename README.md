@@ -13,10 +13,13 @@ Nhật ký học tập và các dự án thực hành trên hành trình chuyể
 
 - **Project 5 — Agent RAG + bộ đánh giá (evaluation harness) trên văn bản pháp quy FMCG (AI/LLM):** Agent tool-calling (LlamaIndex) trên cùng 5 văn bản của Project 4, nhưng trọng tâm là **đo lường**: harness hai tầng gồm metric **tất định** (recall/precision/MRR theo nhãn chunk, độ chính xác từ chối, tính hợp lệ trích dẫn, quỹ đạo gọi tool) và **LLM-as-judge** (Ragas), không bao giờ trộn chung một bảng. Benchmark 20 câu gán nhãn tay (8 một-bước / 8 nhiều-bước / 4 ngoài phạm vi). Agent đạt **recall 100%** và **từ chối đúng 20/20** so với baseline 93.8% / 95.0%, đổi lại **+35% lượt gọi tool**. Có 12 thí nghiệm truy hồi, **ba kết quả âm được giữ nguyên kèm số đo** (parent-child chỉ đáng một câu; cả ba cơ chế xử lý quan hệ sửa đổi văn bản đều không đóng góp gì), **sáu lỗi đo lường tự tìm ra và ghi lại**, và 11 unit test cho tầng metric. [Xem thư mục »](AI_LLM/project5_rag_agent)
 
+- **Project 6 — Chấm điểm tín dụng, scorecard + WOE bằng SQL (credit risk):** Pipeline ước lượng PD trên Give Me Some Credit (150.000 hồ sơ, bad rate 6,68%). Feature engineering **WOE bằng SQL** (NTILE, window function, GROUP BY, JOIN, bảng tra WOE là một bảng nhìn được và kiểm được), scorecard hồi quy logistic 9 biến quy đổi ra **thang điểm PDO 20 / 600 = odds 50:1** cộng được bằng tay và có mã lý do từ chối, rồi đối chiếu với XGBoost đơn điệu, calibration (Platt / isotonic) và PSI/CSI. Scorecard đơn điệu đạt **Gini test 0,7006, KS 0,5440**, XGBoost đủ biến 0,7208. [Xem thư mục »](credit_scoring/project6_credit_scoring)
+
 ## Kỹ năng thể hiện
-Python, pandas, scikit-learn, xgboost, TensorFlow/Keras, EDA, phân tích chuỗi thời gian, feature engineering & target encoding, deep learning / CNN (thị giác máy tính), **RAG / LLM (embedding, vector search, prompt engineering, đánh giá faithfulness)**, **agent tool-calling (LlamaIndex), thiết kế benchmark có nhãn & evaluation harness, LLM-as-judge (Ragas), unit test**, chống rò rỉ dữ liệu, đánh giá mô hình, Git.
+Python, pandas, scikit-learn, xgboost, TensorFlow/Keras, EDA, phân tích chuỗi thời gian, feature engineering & target encoding, deep learning / CNN (thị giác máy tính), **RAG / LLM (embedding, vector search, prompt engineering, đánh giá faithfulness)**, **agent tool-calling (LlamaIndex), thiết kế benchmark có nhãn & evaluation harness, LLM-as-judge (Ragas), unit test**, **SQL phân tích (CTE, window function, NTILE), credit scoring (WOE/IV, scorecard PDO, ràng buộc đơn điệu, calibration, PSI/CSI)**, chống rò rỉ dữ liệu, đánh giá mô hình, Git.
 
 ## Cấu trúc
 - `EDA_and_basicML/` — các project phân tích dữ liệu & ML cơ bản
 - `DeepLearning/` — các project deep learning
 - `AI_LLM/` — các project AI / mô hình ngôn ngữ lớn
+- `credit_scoring/` — các project rủi ro tín dụng / scorecard

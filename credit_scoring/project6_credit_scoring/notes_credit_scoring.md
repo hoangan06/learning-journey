@@ -603,6 +603,11 @@ Công thức Hanley–McNeil, AUC quanh 0,78:
 Trên OOT-proxy, mọi chênh lệch dưới khoảng 0,03 Gini phải coi là chưa kết luận được. So sánh
 hai model trên cùng một tập thì dùng test cặp (DeLong) chứ không so bằng mắt.
 
+Bảng này tính với **AUC giả định 0,78** vì lúc viết chưa có model. Khoảng tin cậy hẹp lại khi AUC
+thật cao hơn: với AUC 0,856 mà scorecard đạt trên `oot`, cùng công thức và cùng cỡ mẫu cho SE 0,0124
+và KTC **±0,0243**. Con số đã chốt cho cả dự án là ±0,025 (§10), và ±0,028 ở đây không sai, nó chỉ
+là cùng công thức đọc ở một mức AUC khác.
+
 ---
 
 ## 5. Calibration
@@ -686,8 +691,20 @@ một hàm đơn điệu bất kỳ, linh hoạt hơn nhưng cần nhiều dữ 
 tích như công thức `−ln(w)` dùng được khi biết chính xác đã lấy mẫu lại thế nào, sạch nhất và
 không tốn dữ liệu.
 
-Cả ba đều đơn điệu nên không bao giờ đổi Gini/AUC/KS. Từ đó ra một bất đối xứng chi phối mọi
-quyết định chọn model:
+Cả ba đều đơn điệu, nhưng **chỉ hai trong ba giữ nguyên Gini/AUC/KS**, và chỗ này tôi ghi sai ở
+bản đầu rồi phải sửa sau khi đo ở khối 5.
+
+Platt và hiệu chỉnh giải tích là đơn điệu **nghiêm ngặt**: hai người khác điểm trước thì vẫn khác
+điểm sau, nên thứ hạng giữ nguyên tuyệt đối. Đo được: Gini trước và sau trùng nhau tới chữ số
+cuối, Spearman đúng bằng 1.
+
+Isotonic thì đơn điệu **không nghiêm ngặt**. Nó là hàm bậc thang, nên hai người khác điểm có thể
+thành bằng điểm sau khi hiệu chỉnh. Trên bộ này nó nén 10.589 giá trị PD phân biệt xuống còn 74,
+và AUC tính mỗi cặp hoà là 0,5 nên Gini mất 0,0018. Nhỏ nhưng có thật, và nó có nghĩa là isotonic
+mua calibration bằng cách bán một ít khả năng xếp hạng. Chi tiết ở `results/calibration_psi.md`
+mục 2.
+
+Từ đó ra một bất đối xứng chi phối mọi quyết định chọn model:
 
 **Calibration là thứ sửa được sau, xếp hạng thì không.**
 
@@ -702,8 +719,9 @@ riêng sạch để fit lớp hiệu chỉnh. Hoặc khi chi phí quản trị m
 phần Gini kiếm được, vì mỗi lớp trong pipeline phải được tài liệu hoá, thẩm định độc lập và
 giám sát riêng.
 
-Và trước hết phải hỏi chênh lệch 0,06 có vượt nhiễu không. Với cỡ OOT ở đây thì khoảng tin
-cậy 95% là ±0,028, nên 0,06 có lẽ là thật nhưng phải kiểm bằng test cặp chứ không bằng mắt.
+Và trước hết phải hỏi chênh lệch 0,06 có vượt nhiễu không. Với cỡ OOT ở đây và ở mức Gini 0,58
+đó thì khoảng tin cậy 95% là ±0,028, nên 0,06 có lẽ là thật nhưng phải kiểm bằng test cặp chứ
+không bằng mắt.
 
 ### 5.4 Dùng metric nào khi nào
 
@@ -1149,6 +1167,15 @@ Ghi lại trước khi chạy, để các bước sau kiểm chứ không phải
 | 2 | XGBoost vượt scorecard 0,02–0,06 Gini. Vượt trên 0,10 thì nghi scorecard làm ẩu; thua scorecard thì nghi XGBoost overfit hoặc cài sai | Bước đánh giá |
 | 3 | PSI trên OOT-proxy ngẫu nhiên khoảng 0,0006; trên OOT dịch nhân tạo vượt 0,25 | Bước đánh giá |
 | 4 | Mọi chênh lệch dưới 0,03 Gini trên OOT là chưa kết luận được, vì KTC 95% là ±0,028 | Bước đánh giá |
+
+Cả bốn đã kiểm xong:
+
+| # | Kết quả |
+|---|---|
+| 1 | **Đúng.** Chênh lệch −0,0008, xa dưới 0,01. Nhưng PD dự báo trung bình vọt lên 4,78 lần bad rate thực, nên kết luận triển khai là không bật (khối 4) |
+| 2 | **Sai.** Đo được **0,0143** trên cùng 9 biến, dưới cận dưới 0,02. Không rơi vào kịch bản nào trong hai kịch bản báo động tôi ghi kèm, nên chỉ đơn giản là tôi ước lượng cao (khối 4) |
+| 3 | **Đúng cả hai vế.** PSI nền 0,00116 (mô phỏng cho trung vị 0,00047, xấp xỉ lý thuyết 0,00049); OOT dịch cho **0,4145** (khối 5) |
+| 4 | **Đúng về tinh thần, rộng tay về con số.** Tính lại bằng Hanley–McNeil ra ±0,0243 trên `oot` và ±0,0247 trên `test`; chốt **±0,025** cho cả dự án (khối 5) |
 
 ### Kết quả các giả thuyết đã kiểm
 

@@ -1,0 +1,16 @@
+# Bản tối thiểu để chạy lại toàn bộ pipeline. SQLite nằm trong thư viện chuẩn nên không có ở đây.
+#
+# Mốc phiên bản lấy từ đúng API được dùng trong code, không chép từ `pip freeze`:
+#   scikit-learn >= 1.2   vì `LogisticRegression(solver="newton-cholesky")`
+#   scipy        >= 1.9   vì `spearmanr(...).statistic`
+#   xgboost      >= 1.7   vì `XGBClassifier(eval_metric=...)` và `predict(..., pred_interactions=True)`
+# numpy và pandas không dùng API nào mới, mốc đặt ở bản 2.x cho khớp môi trường đang chạy.
+#
+# Kết quả XGBoost không tái lập bit-wise giữa các nền tảng; biên độ đo được giữa các seed là
+# 0,0011 Gini (`results/model_comparison.md` §4), nên chỉ đọc con số cây tới chữ số chịu được.
+
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.2
+scipy>=1.9
+xgboost>=1.7
